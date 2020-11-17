@@ -1,6 +1,7 @@
 # Libraries
 library(DBI)
 library(RMySQL)
+
 library(dplyr)
 library(data.table)
 library(ggplot2)
@@ -33,13 +34,13 @@ library(purrr)
 library(magrittr)
 
 # Connection with MySQL database
-drv <- dbDriver("MySQL")
-con <- dbConnect(drv, username = 'root', 
-                 password = 'projetoporcos', 
-                 dbname = 'Swine', 
-                 host = 'localhost')
+connection <- dbConnect(RMariaDB :: MariaDB(),
+                        dbname = 'Swine',
+                        host = "localhost",
+                        user = "root",
+                        password = "projetoporcos")
 
 ## Read tables (PARA QUANDO TIVERMOS AS TABELAS)
-exploracoes <- dbReadTable(con, "st_tabela_exploracoes")
-contagens <- dbReadTable(con, "st_tabela_contagens")
-vacinacoes <- dbReadTable(con, "st_tabela_vacinacoes")
+exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
+contagens <- dbReadTable(connection, "st_tabela_contagens")
+vacinacoes <- dbReadTable(connection, "st_tabela_vacinacoes")
