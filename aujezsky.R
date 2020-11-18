@@ -40,7 +40,7 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
                         user = "root",
                         password = "projetoporcos")
 
-## Read tables (PARA QUANDO TIVERMOS AS TABELAS)
+## Read tables
 exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
 contagens <- dbReadTable(connection, "st_tabela_contagens")
 vacinacoes <- dbReadTable(connection, "st_tabela_vacinacoes")
