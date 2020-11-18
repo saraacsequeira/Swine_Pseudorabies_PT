@@ -44,3 +44,8 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
 exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
 contagens <- dbReadTable(connection, "st_tabela_contagens")
 vacinacoes <- dbReadTable(connection, "st_tabela_vacinacoes")
+classificacoes <- dbReadTable(connection, "st_tabela_classificacoes")
+controlos <- dbReadTable(connection, "st_tabela_controlos")
+localizacoes <- dbReadTable(connection, "st_tabela_localizacoes")
+abates <- dbReadTable(connection, "st_tabela_abates")
+animais_abatidos <- dbReadTable(connection, "st_tabela_animais_abatidos")
