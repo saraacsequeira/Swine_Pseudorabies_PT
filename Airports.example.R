@@ -9,7 +9,7 @@ library(RColorBrewer)
 library(dplyr)
 
 
-
+# ADD DATA
 # count the number of flights from each origin to each destination
 flights_grouped <- flights %>%
   count(dest, origin)
@@ -26,11 +26,20 @@ colnames(flights_grouped)[6:7] <- c("lat_origin", "lon_origin")
 # remove NAs
 flights_grouped <- flights_grouped[!is.na(flights_grouped$dest), ]
 
-
+#ADD MAP and TOKEN
 ms <- mapdeck_style("satellite")
 token <- "pk.eyJ1IjoidGVyZXNhcGNvdXRpbmhvIiwiYSI6ImNraG9tbGRvZTBiNW8yc3A1cHgwMTM3engifQ.IZkYiF2VaRnuW9lm6h3SgQ"
 
-mapdeck(data = flights_grouped, style = ms, pitch = 30, token = token) %>%
+
+
+# ADD 2ND MAP (NEW STYLE)
+style <- mapdeck_style("mapbox://styles/saraacsequeira/ckhootfbr214a19qj8ieui4br")
+token1 <- "pk.eyJ1Ijoic2FyYWFjc2VxdWVpcmEiLCJhIjoiY2tob21yOXJsMDhqdjJxbHRqNXRzcWtuNSJ9.rSulzuWkuijZK1xmU_BPnQ"
+
+
+
+# ADD_ARC EXAMPLES
+mapdeck(data = flights_grouped, style = style, pitch = 30, token = token1) %>%
   add_arc(
     # coordinates of origin airports
     origin = c("lon_origin", "lat_origin"),
