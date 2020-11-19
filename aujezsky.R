@@ -42,9 +42,40 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
 contagens <- dbReadTable(connection, "st_tabela_contagens")
 
-# Number of animals by farm table
+# Number of animals by farm 
+## Table with total animals
 count <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$declaracao_existencias), FUN = sum))
 count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1"))
 names(count)[11] <- "total"
+count$total <- as.numeric(count$total)
+
+## Remove duplicated rows based on declaracao_existencias
+count <- count %>% 
+  distinct(declaracao_existencias, .keep_all = TRUE)
+
+## Add column with label 
+count$info <- paste0("<br>", count$exploracao, "<br>", count$svl, " - ", count$dsavr, "<br>", count$contagem, " ", "animais", "<br>")
+
+## Select only declaracao_existencias from 2020
+count <- count %>%
+  filter(count$data > as.Date("2020-01-01"))
+
+## Remove farms missing any information
+count <- na.omit(count)
+
+## Define categories based on total animals
+count$categoria <- cut(count$total, c(0,50,100,250,500,750,1000,2500,5000,10000,25000,50000))
+levels(count$categoria) <- c("0-50", "50-100", "100-250", "250-500", "500-750", "750-1000", "1000-2500", "2500-5000", "5000-10000", "10000-25000", "25000-50000")
+count$categoria <- as.character(count$categoria)
 
 
+## Map
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_scatterplot(data = count, 
+                  lat = "latitude", 
+                  lon = "longitude",
+                  radius = 2000,
+                  fill_colour = "categoria",
+                  legend = TRUE, 
+                  tooltip = "info",
+                  layer_id = "scatter_layer")
