@@ -15,6 +15,7 @@ library(gganimate)
 library(ggpubr)
 library(tibble)
 library(reshape2)
+library(mapdeck)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
