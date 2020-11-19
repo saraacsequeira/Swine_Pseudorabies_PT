@@ -31,6 +31,7 @@ localizacoes <- dbReadTable(connection, "st_tabela_localizacoes")
 abates <- dbReadTable(connection, "st_tabela_abates")
 animais_abatidos <- dbReadTable(connection, "st_tabela_animais_abatidos")
 matadouros <- dbReadTable(connection, "st_tabela_matadouros")
+contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 # Pig farm's distribution by LVS (local veterinary service)
 ## Read tables from MySQLWorkbench
