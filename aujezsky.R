@@ -24,6 +24,8 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
                         host = "localhost",
                         user = "root",
                         password = "projetoporcos")
+#Mapdeck token
+token <- "pk.eyJ1IjoidGVyZXNhcGNvdXRpbmhvIiwiYSI6ImNraG9tbGRvZTBiNW8yc3A1cHgwMTM3engifQ.IZkYiF2VaRnuW9lm6h3SgQ"
 
 #Tables (a aplicar + à frente em cada tópico)
 vacinacoes <- dbReadTable(connection, "st_tabela_vacinacoes")
@@ -40,6 +42,9 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
 contagens <- dbReadTable(connection, "st_tabela_contagens")
 
-#Mapdeck token
-token <- "pk.eyJ1IjoidGVyZXNhcGNvdXRpbmhvIiwiYSI6ImNraG9tbGRvZTBiNW8yc3A1cHgwMTM3engifQ.IZkYiF2VaRnuW9lm6h3SgQ"
+# Number of animals by farm table
+count <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$declaracao_existencias), FUN = sum))
+count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1"))
+names(count)[11] <- "total"
+
 
