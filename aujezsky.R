@@ -69,6 +69,7 @@ levels(count$categoria) <- c("0-50", "50-100", "100-250", "250-500", "500-750", 
 count$categoria <- as.character(count$categoria)
 
 
+
 ## Map
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
   add_scatterplot(data = count, 
@@ -78,4 +79,5 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   fill_colour = "categoria",
                   legend = TRUE, 
                   tooltip = "info",
-                  layer_id = "scatter_layer")
+                  layer_id = "scatter_layer",
+                  legend_options = list(fill_colour = list(title = "Number of animals by farm")))
