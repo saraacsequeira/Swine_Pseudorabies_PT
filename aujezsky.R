@@ -17,6 +17,7 @@ library(tibble)
 library(reshape2)
 library(mapdeck)
 library(colourvalues)
+library(RColorBrewer)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -71,7 +72,7 @@ count$categoria <- as.character(count$categoria)
 
 
 ## Map
-mapdeck(token = token, style = mapdeck_style("dark")) %>%
+mapdeck(token = token, style = mapdeck_style("light")) %>%
   add_scatterplot(data = count, 
                   lat = "latitude", 
                   lon = "longitude",
@@ -80,4 +81,5 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   legend = TRUE, 
                   tooltip = "info",
                   layer_id = "scatter_layer",
-                  legend_options = list(fill_colour = list(title = "Number of animals by farm")))
+                  legend_options = list(fill_colour = list(title = "Number of animals by farm")),
+                  palette = "inferno")
