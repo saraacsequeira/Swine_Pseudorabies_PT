@@ -40,4 +40,5 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 exploracoes <- dbReadTable(connection, "st_tabela_exploracoes")
 contagens <- dbReadTable(connection, "st_tabela_contagens")
 
-
+#Mapdeck token
+token <- "pk.eyJ1IjoidGVyZXNhcGNvdXRpbmhvIiwiYSI6ImNraG9tbGRvZTBiNW8yc3A1cHgwMTM3engifQ.IZkYiF2VaRnuW9lm6h3SgQ"
