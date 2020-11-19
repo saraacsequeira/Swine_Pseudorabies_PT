@@ -77,3 +77,29 @@ mapdeck(token = token, style = ms) %>%
     , tooltip = "info"
     , layer_id = 'arclayer'
   )
+
+##SCATTERPLOT
+capitals <- as.data.frame(capitals)
+
+mapdeck(token = token, style = ms) %>%
+  add_scatterplot(
+    data = capitals
+    , lat = "lat", lon = "lon"
+    , radius = 500000
+    , fill_colour = "country"
+    , legend = TRUE
+    , tooltip = "info"
+  )
+
+
+mapdeck( token = token ) %>%
+  add_scatterplot(
+    data = capitals
+    , lat = "lat"
+    , lon = "lon"
+    , radius = 500000
+    , fill_colour = "country"
+    , layer_id = "scatter_layer"
+    , palette = "plasma"
+  )
+
