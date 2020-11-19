@@ -17,6 +17,7 @@ library(ggpubr)
 library(tibble)
 library(reshape2)
 library(mapdeck)
+library(colourvalues)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -42,3 +43,4 @@ contagens <- dbReadTable(connection, "st_tabela_contagens")
 
 #Mapdeck token
 token <- "pk.eyJ1IjoidGVyZXNhcGNvdXRpbmhvIiwiYSI6ImNraG9tbGRvZTBiNW8yc3A1cHgwMTM3engifQ.IZkYiF2VaRnuW9lm6h3SgQ"
+
