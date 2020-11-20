@@ -97,8 +97,12 @@ mapdeck(token = token, style = mapdeck_style("light")) %>%
 
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
 
+class <- as.data.frame(merge(contagens, classificacoes, by.x = "exploracao", by.y = "exploracao_id"))
 
+class %>% select(exploracao, data, longitude, latitude, svl, classificacao_sanitaria)
 
+class %>%
+  dplyr::filter(DATE1 >= as.POSIXct('2018-01-01'))
 
 
 
