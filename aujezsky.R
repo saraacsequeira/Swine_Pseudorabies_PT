@@ -17,6 +17,7 @@ library(tibble)
 library(reshape2)
 library(mapdeck)
 library(colourvalues)
+library(scales)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -65,7 +66,7 @@ count <- count %>%
 
 ## Map
 ### Add column with label 
-count$info <- paste0("<br>", count$exploracao, "<br>", count$svl, " - ", count$dsavr, "<br>", count$contagem, " ", "animais", "<br>")
+count$info <- paste0(count$exploracao, "<br>", count$svl, " - ", count$dsavr, "<br>", count$contagem, " ", "animais", "<br>")
 
 ### Select only declaracao_existencias from 2020
 count <- count %>%
@@ -76,12 +77,11 @@ count <- na.omit(count)
 
 ### Define categories based on total animals
 count$categoria <- cut(count$total, c(0,50,100,250,500,750,1000,2500,5000,10000,25000,50000))
-levels(count$categoria) <- c("0-50", "50-100", "100-250", "250-500", "500-750", "750-1000", "1000-2500", "2500-5000", "5000-10000", "10000-25000", "25000-50000")
-count$categoria <- as.character(count$categoria)
+levels(count$categoria) <- c("0;50", "50;100", "100;250", "250;500", "500;750", "750;1000", "1000;2500", "2500;5000", "5000;10000", "10000;25000", "25000;50000")
 
 
-### Map
-mapdeck(token = token, style = mapdeck_style("light")) %>%
+### Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
   add_scatterplot(data = count, 
                   lat = "latitude", 
                   lon = "longitude",
@@ -93,6 +93,39 @@ mapdeck(token = token, style = mapdeck_style("light")) %>%
                   legend_options = list(fill_colour = list(title = "Number of animals by farm")),
                   palette = "inferno")
 
+
+# 1.2.1 - Number of animals by SVL
+## Table with total of animals by SVL
+count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
+count_svl <- count_svl %>% arrange(Group.2, Group.1)
+names(count_svl) <- c("classe", "svl", "contagem")
+
+count_total <- as.data.frame(aggregate(count_svl$contagem, by = list(count_svl$svl), FUN = sum))
+names(count_total) <- c("svl", "total")
+count_total$total <- as.numeric(count_total$total)
+
+
+## Plot with total number of animals by SVL
+ggplot(count_total, aes(x = svl, y = total, fill = svl)) + 
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  theme_light() +
+  theme(legend.position = "none") +
+  labs( title = "Number of animals by SVL", size = 10,
+        y = "Number of animals",
+        x = "Local Veterinary Service")
+
+# 1.2.2 - Percentage of animals by class by SVL
+## Table with percentage of animals by class by SVL
+count_svl <- as.data.frame(merge(count_svl, count_total, by.x = "svl", by.y = "svl"))
+names(count_svl)[4] <- "total"
+
+count_svl$contagem <- as.numeric(count_svl$contagem)
+count_svl$total <- as.numeric(count_svl$total)
+count_svl$percentagem <- as.data.frame(count_svl$contagem / count_svl$total)
+names(count_svl)[5] <- "percentagem"
+
+## Plot with percentagem of animals by class in each SVL
 
 
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
