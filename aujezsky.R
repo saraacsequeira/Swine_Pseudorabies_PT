@@ -98,12 +98,12 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 ## Table with total of animals by SVL
 count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
 count_svl <- count_svl %>% arrange(Group.2, Group.1)
-names(count_svl) <- c("classe", "svl", "contagem")
+names(count_svl) <- c("class", "svl", "count")
 
-count_total <- as.data.frame(aggregate(count_svl$contagem, by = list(count_svl$svl), FUN = sum))
+
+count_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
 names(count_total) <- c("svl", "total")
 count_total$total <- as.numeric(count_total$total)
-
 
 ## Plot with total number of animals by SVL
 ggplot(count_total, aes(x = svl, y = total, fill = svl)) + 
@@ -117,7 +117,7 @@ ggplot(count_total, aes(x = svl, y = total, fill = svl)) +
 
 # 1.2.2 - Percentage of animals by class by SVL
 ## Table with percentage of animals by class by SVL
-count_svl <- as.data.frame(merge(count_svl, count_total, by.x = "svl", by.y = "svl"))
+count_svl1 <- as.data.frame(merge(count_svl, count_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
 
 count_svl$contagem <- as.numeric(count_svl$contagem)
@@ -125,7 +125,10 @@ count_svl$total <- as.numeric(count_svl$total)
 count_svl$percentagem <- as.data.frame(count_svl$contagem / count_svl$total)
 names(count_svl)[5] <- "percentagem"
 
-## Plot with percentagem of animals by class in each SVL
+## Plot with percentage of animals by class in each SVL
+
+
+
 
 
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
