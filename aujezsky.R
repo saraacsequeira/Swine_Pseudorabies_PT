@@ -54,8 +54,9 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 # 1.2 - Number of animals by farm 
 ## Table with total animals
+contagens$contagem <- as.numeric(contagens$contagem)
 count <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$declaracao_existencias), FUN = sum))
-count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1"))
+count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1", all = TRUE))
 names(count)[11] <- "total"
 count$total <- as.numeric(count$total)
 
@@ -66,13 +67,16 @@ count <- count %>%
 
 ## Map
 ### Add column with label 
-count$info <- paste0(count$exploracao, "<br>", count$svl, " - ", count$dsavr, "<br>", count$contagem, " ", "animais", "<br>")
+count$info <- paste0(count$exploracao, "<br>", count$svl, " - ", count$dsavr, "<br>", count$total, " ", "animals", "<br>")
 
 ### Select only declaracao_existencias from 2020
 count <- count %>%
-  filter(count$data > as.Date("2020-01-01"))
+  filter(count$data > as.Date("2020-01-01")) 
 
-### Remove farms missing any information
+### Select only columns useful for the map
+count <- count %>% select(longitude, latitude, exploracao, dsavr, svl, total, info)
+
+### Remove NA
 count <- na.omit(count)
 
 ### Define categories based on total animals
@@ -100,12 +104,12 @@ count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$cla
 count_svl <- count_svl %>% arrange(Group.2, Group.1)
 names(count_svl) <- c("class", "svl", "count")
 
-count_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
-names(count_total) <- c("svl", "total")
-count_total$total <- as.numeric(count_total$total)
+count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
+names(count_svl_total) <- c("svl", "total")
+count_svl_total$total <- as.numeric(count_total$total)
 
 ## Plot with total number of animals by LVS
-ggplot(count_total, aes(x = svl, y = total, fill = svl)) + 
+ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
   geom_bar(stat = "identity") + 
   coord_flip() + 
   theme_light() +
@@ -131,7 +135,7 @@ ggplot(count_svl, aes(fill = class, y = percentage, x = svl)) +
   geom_bar(position = "fill", stat = "identity") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_fill_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2", labels = c("Weaners", "Piglets", "Sows", "Pigs", "Boars")) +
   labs( title = "Percentage of animals in each class by LVS", size = 15,
         y = "Percentage",
         x = "Local Veterinary Service", 
@@ -218,7 +222,7 @@ status_by_year <- as.data.frame(melt(status_by_year, id.vars = "status", measure
 names(status_by_year) <- c("status", "year", "count")
 status_by_year$count <- as.numeric(status_by_year$count)
 
-### Barplot
+## Barplot
 ggplot(status_by_year, aes(x = year, y = count, fill = status)) + 
   geom_bar(stat = "identity", position = "dodge") + 
   theme_light() +
@@ -233,265 +237,478 @@ ggplot(status_by_year, aes(x = year, y = count, fill = status)) +
 
 ### Number of farms by type of production and by status in each year
 ### Different tables for each year
-recria_2016 <- status_2016[status_2016$tipo_producao == "Recria e/ou acabamento", ]
-producao_2016 <- status_2016[status_2016$tipo_producao == "Produção", ]
-leitoes_2016 <- status_2016[status_2016$tipo_producao == "Produção de Leitões", ]
-selecao_2016 <- status_2016[status_2016$tipo_producao == "Seleção e/ou multiplicação", ]
-outros_2016 <- status_2016[status_2016$tipo_producao == "Outros", ]
-colheita_2016 <- status_2016[status_2016$tipo_producao == "Centro de Colheita de sémen", ]
+rearing_2016 <- status_2016[status_2016$tipo_producao == "Recria e/ou acabamento", ]
+production_2016 <- status_2016[status_2016$tipo_producao == "Produção", ]
+piglets_2016 <- status_2016[status_2016$tipo_producao == "Produção de Leitões", ]
+selection_2016 <- status_2016[status_2016$tipo_producao == "Seleção e/ou multiplicação", ]
+others_2016 <- status_2016[status_2016$tipo_producao == "Outros", ]
+collection_2016 <- status_2016[status_2016$tipo_producao == "Centro de Colheita de sémen", ]
 
-recria_2017 <- status_2017[status_2017$tipo_producao == "Recria e/ou acabamento", ]
-producao_2017 <- status_2017[status_2017$tipo_producao == "Produção", ]
-leitoes_2017 <- status_2017[status_2017$tipo_producao == "Produção de Leitões", ]
-selecao_2017 <- status_2017[status_2017$tipo_producao == "Seleção e/ou multiplicação", ]
-outros_2017 <- status_2017[status_2017$tipo_producao == "Outros", ]
-colheita_2017 <- status_2017[status_2017$tipo_producao == "Centro de Colheita de sémen", ]
+rearing_2017 <- status_2017[status_2017$tipo_producao == "Recria e/ou acabamento", ]
+production_2017 <- status_2017[status_2017$tipo_producao == "Produção", ]
+piglets_2017 <- status_2017[status_2017$tipo_producao == "Produção de Leitões", ]
+selection_2017 <- status_2017[status_2017$tipo_producao == "Seleção e/ou multiplicação", ]
+others_2017 <- status_2017[status_2017$tipo_producao == "Outros", ]
+collection_2017 <- status_2017[status_2017$tipo_producao == "Centro de Colheita de sémen", ]
 
-recria_2018 <- status_2018[status_2018$tipo_producao == "Recria e/ou acabamento", ]
-producao_2018 <- status_2018[status_2018$tipo_producao == "Produção", ]
-leitoes_2018 <- status_2018[status_2018$tipo_producao == "Produção de Leitões", ]
-selecao_2018 <- status_2018[status_2018$tipo_producao == "Seleção e/ou multiplicação", ]
-outros_2018 <- status_2018[status_2018$tipo_producao == "Outros", ]
-colheita_2018 <- status_2018[status_2018$tipo_producao == "Centro de Colheita de sémen", ]
+rearing_2018 <- status_2018[status_2018$tipo_producao == "Recria e/ou acabamento", ]
+production_2018 <- status_2018[status_2018$tipo_producao == "Produção", ]
+piglets_2018 <- status_2018[status_2018$tipo_producao == "Produção de Leitões", ]
+selection_2018 <- status_2018[status_2018$tipo_producao == "Seleção e/ou multiplicação", ]
+others_2018 <- status_2018[status_2018$tipo_producao == "Outros", ]
+collection_2018 <- status_2018[status_2018$tipo_producao == "Centro de Colheita de sémen", ]
 
-recria_2019 <- status_2019[status_2019$tipo_producao == "Recria e/ou acabamento", ]
-producao_2019 <- status_2019[status_2019$tipo_producao == "Produção", ]
-leitoes_2019 <- status_2019[status_2019$tipo_producao == "Produção de Leitões", ]
-selecao_2019 <- status_2019[status_2019$tipo_producao == "Seleção e/ou multiplicação", ]
-outros_2019 <- status_2019[status_2019$tipo_producao == "Outros", ]
-colheita_2019 <- status_2019[status_2019$tipo_producao == "Centro de Colheita de sémen", ]
+rearing_2019 <- status_2019[status_2019$tipo_producao == "Recria e/ou acabamento", ]
+production_2019 <- status_2019[status_2019$tipo_producao == "Produção", ]
+piglets_2019 <- status_2019[status_2019$tipo_producao == "Produção de Leitões", ]
+selection_2019 <- status_2019[status_2019$tipo_producao == "Seleção e/ou multiplicação", ]
+others_2019 <- status_2019[status_2019$tipo_producao == "Outros", ]
+collection_2019 <- status_2019[status_2019$tipo_producao == "Centro de Colheita de sémen", ]
 
-recria_2020 <- status_2020[status_2020$tipo_producao == "Recria e/ou acabamento", ]
-producao_2020 <- status_2020[status_2020$tipo_producao == "Produção", ]
-leitoes_2020 <- status_2020[status_2020$tipo_producao == "Produção de Leitões", ]
-selecao_2020 <- status_2020[status_2020$tipo_producao == "Seleção e/ou multiplicação", ]
-outros_2020 <- status_2020[status_2020$tipo_producao == "Outros", ]
-colheita_2020 <- status_2020[status_2020$tipo_producao == "Centro de Colheita de sémen", ]
+rearing_2020 <- status_2020[status_2020$tipo_producao == "Recria e/ou acabamento", ]
+production_2020 <- status_2020[status_2020$tipo_producao == "Produção", ]
+piglets_2020 <- status_2020[status_2020$tipo_producao == "Produção de Leitões", ]
+selection_2020 <- status_2020[status_2020$tipo_producao == "Seleção e/ou multiplicação", ]
+others_2020 <- status_2020[status_2020$tipo_producao == "Outros", ]
+collection_2020 <- status_2020[status_2020$tipo_producao == "Centro de Colheita de sémen", ]
 
 ### Keep only the last change in the each farm status
-recria_2016 <- setDT(recria_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-producao_2016 <- setDT(producao_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-leitoes_2016 <- setDT(leitoes_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-selecao_2016 <- setDT(selecao_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-outros_2016 <- setDT(outros_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-colheita_2016 <- setDT(colheita_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+rearing_2016 <- setDT(rearing_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+production_2016 <- setDT(production_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+piglets_2016 <- setDT(piglets_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+selection_2016 <- setDT(selection_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+others_2016 <- setDT(others_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+collection_2016 <- setDT(collection_2016)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
 
-recria_2017 <- setDT(recria_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-producao_2017 <- setDT(producao_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-leitoes_2017 <- setDT(leitoes_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-selecao_2017 <- setDT(selecao_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-outros_2017 <- setDT(outros_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-colheita_2017 <- setDT(colheita_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+rearing_2017 <- setDT(rearing_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+production_2017 <- setDT(production_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+piglets_2017 <- setDT(piglets_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+selection_2017 <- setDT(selection_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+others_2017 <- setDT(others_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+collection_2017 <- setDT(collection_2017)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
 
-recria_2018 <- setDT(recria_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-producao_2018 <- setDT(producao_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-leitoes_2018 <- setDT(leitoes_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-selecao_2018 <- setDT(selecao_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-outros_2018 <- setDT(outros_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-colheita_2018 <- setDT(colheita_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+rearing_2018 <- setDT(rearing_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+production_2018 <- setDT(production_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+piglets_2018 <- setDT(piglets_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+selection_2018 <- setDT(selection_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+outhers_2018 <- setDT(others_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+collection_2018 <- setDT(collection_2018)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
 
-recria_2019 <- setDT(recria_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-producao_2019 <- setDT(producao_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-leitoes_2019 <- setDT(leitoes_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-selecao_2019 <- setDT(selecao_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-outros_2019 <- setDT(outros_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-colheita_2019 <- setDT(colheita_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+rearing_2019 <- setDT(rearing_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+production_2019 <- setDT(production_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+piglets_2019 <- setDT(piglets_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+selection_2019 <- setDT(selection_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+others_2019 <- setDT(others_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+collection_2019 <- setDT(collection_2019)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
 
-recria_2020 <- setDT(recria_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-producao_2020 <- setDT(producao_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-leitoes_2020 <- setDT(leitoes_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-selecao_2020 <- setDT(selecao_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-outros_2020 <- setDT(outros_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
-colheita_2020 <- setDT(colheita_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+rearing_2020 <- setDT(rearing_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+production_2020 <- setDT(production_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+piglets_2020 <- setDT(piglets_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+selection_2020 <- setDT(selection_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+others_2020 <- setDT(others_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
+collection_2020 <- setDT(collection_2020)[order(exploracao_id, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao_id)]
 
 ### Count number of farms by status in each type of production and gather each year in one table
   #2016#
-recria_2016 <- as.data.frame(aggregate(x = recria_2016, list(estatuto = recria_2016$classificacao_sanitaria), FUN = length))
-recria_2016 <- recria_2016 %>% select(estatuto, exploracao_id)
-names(recria_2016) <- c("estatuto", "contagem")
+rearing_2016 <- as.data.frame(aggregate(x = rearing_2016, list(status = rearing_2016$classificacao_sanitaria), FUN = length))
+rearing_2016 <- rearing_2016 %>% select(status, exploracao_id)
+names(rearing_2016) <- c("status", "count")
 
-producao_2016 <- as.data.frame(aggregate(x = producao_2016, list(estatuto = producao_2016$classificacao_sanitaria), FUN = length))
-producao_2016 <- producao_2016 %>% select(estatuto, exploracao_id)
-names(producao_2016) <- c("estatuto", "contagem")
+production_2016 <- as.data.frame(aggregate(x = production_2016, list(status = production_2016$classificacao_sanitaria), FUN = length))
+production_2016 <- production_2016 %>% select(status, exploracao_id)
+names(production_2016) <- c("status", "count")
 
-leitoes_2016 <- as.data.frame(aggregate(x = leitoes_2016, list(estatuto = leitoes_2016$classificacao_sanitaria), FUN = length))
-leitoes_2016 <- leitoes_2016 %>% select(estatuto, exploracao_id)
-names(leitoes_2016) <- c("estatuto", "contagem")
+piglets_2016 <- as.data.frame(aggregate(x = piglets_2016, list(status = piglets_2016$classificacao_sanitaria), FUN = length))
+piglets_2016 <- piglets_2016 %>% select(status, exploracao_id)
+names(piglets_2016) <- c("status", "count")
 
-selecao_2016 <- as.data.frame(aggregate(x = selecao_2016, list(estatuto = selecao_2016$classificacao_sanitaria), FUN = length))
-selecao_2016 <- selecao_2016 %>% select(estatuto, exploracao_id)
-names(selecao_2016) <- c("estatuto", "contagem")
+selection_2016 <- as.data.frame(aggregate(x = selection_2016, list(status = selection_2016$classificacao_sanitaria), FUN = length))
+selection_2016 <- selection_2016 %>% select(status, exploracao_id)
+names(selection_2016) <- c("status", "count")
 
-outros_2016 <- as.data.frame(aggregate(x = outros_2016, list(estatuto = outros_2016$classificacao_sanitaria), FUN = length))
-outros_2016 <- outros_2016 %>% select(estatuto, exploracao_id)
-names(outros_2016) <- c("estatuto", "contagem")
+others_2016 <- as.data.frame(aggregate(x = others_2016, list(status = others_2016$classificacao_sanitaria), FUN = length))
+others_2016 <- others_2016 %>% select(status, exploracao_id)
+names(others_2016) <- c("status", "count")
 
-colheita_2016 <- as.data.frame(aggregate(x = colheita_2016, list(estatuto = colheita_2016$classificacao_sanitaria), FUN = length))
-colheita_2016 <- colheita_2016 %>% select(estatuto, exploracao_id)
-names(colheita_2016) <- c("estatuto", "contagem")
+collection_2016 <- as.data.frame(aggregate(x = collection_2016, list(status = collection_2016$classificacao_sanitaria), FUN = length))
+collection_2016 <- collection_2016 %>% select(status, exploracao_id)
+names(collection_2016) <- c("status", "count")
 
-prod_2016 <- as.data.frame(merge(recria_2016, producao_2016, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2016) <- c("estatuto", "recria", "producao")
-prod_2016 <- as.data.frame(merge(prod_2016, leitoes_2016, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2016) <- c("estatuto", "recria", "producao", "leitoes")
-prod_2016 <- as.data.frame(merge(prod_2016, selecao_2016, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2016) <- c("estatuto", "recria", "producao", "leitoes", "selecao")
-prod_2016 <- as.data.frame(merge(prod_2016, colheita_2016, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2016) <- c("estatuto", "recria", "producao", "leitoes", "colheita")
-prod_2016 <- as.data.frame(merge(prod_2016, outros_2016, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2016) <- c("estatuto", "recria", "producao", "leitoes", "colheita", "outros")
+prod_2016 <- as.data.frame(merge(rearing_2016, production_2016, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2016) <- c("status", "recria", "production")
+prod_2016 <- as.data.frame(merge(prod_2016, piglets_2016, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2016) <- c("status", "recria", "production", "piglets")
+prod_2016 <- as.data.frame(merge(prod_2016, selection_2016, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2016) <- c("status", "recria", "production", "piglets", "selection")
+prod_2016 <- as.data.frame(merge(prod_2016, collection_2016, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2016) <- c("status", "rearing", "production", "piglets", "selection", "collection")
+prod_2016 <- as.data.frame(merge(prod_2016, others_2016, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2016) <- c("status", "rearing", "production", "piglets", "selection", "collection", "others")
+prod_2016 <- prod_2016[-9, ]
+
+prod_2016$year <- "2016"
 
   #2017#
-recria_2017 <- as.data.frame(aggregate(x = recria_2017, list(estatuto = recria_2017$classificacao_sanitaria), FUN = length))
-recria_2017 <- recria_2017 %>% select(estatuto, exploracao_id)
-names(recria_2017) <- c("estatuto", "contagem")
+rearing_2017 <- as.data.frame(aggregate(x = rearing_2017, list(status = rearing_2017$classificacao_sanitaria), FUN = length))
+rearing_2017 <- rearing_2017 %>% select(status, exploracao_id)
+names(rearing_2017) <- c("status", "count")
 
-producao_2017 <- as.data.frame(aggregate(x = producao_2017, list(estatuto = producao_2017$classificacao_sanitaria), FUN = length))
-producao_2017 <- producao_2017 %>% select(estatuto, exploracao_id)
-names(producao_2017) <- c("estatuto", "contagem")
+production_2017 <- as.data.frame(aggregate(x = production_2017, list(status = production_2017$classificacao_sanitaria), FUN = length))
+production_2017 <- production_2017 %>% select(status, exploracao_id)
+names(production_2017) <- c("status", "count")
 
-leitoes_2017 <- as.data.frame(aggregate(x = leitoes_2017, list(estatuto = leitoes_2017$classificacao_sanitaria), FUN = length))
-leitoes_2017 <- leitoes_2017 %>% select(estatuto, exploracao_id)
-names(leitoes_2017) <- c("estatuto", "contagem")
+piglets_2017 <- as.data.frame(aggregate(x = piglets_2017, list(status = piglets_2017$classificacao_sanitaria), FUN = length))
+piglets_2017 <- piglets_2017 %>% select(status, exploracao_id)
+names(piglets_2017) <- c("status", "count")
 
-selecao_2017 <- as.data.frame(aggregate(x = selecao_2017, list(estatuto = selecao_2017$classificacao_sanitaria), FUN = length))
-selecao_2017 <- selecao_2017 %>% select(estatuto, exploracao_id)
-names(selecao_2017) <- c("estatuto", "contagem")
+selection_2017 <- as.data.frame(aggregate(x = selection_2017, list(status = selection_2017$classificacao_sanitaria), FUN = length))
+selection_2017 <- selection_2017 %>% select(status, exploracao_id)
+names(selection_2017) <- c("status", "count")
 
-outros_2017 <- as.data.frame(aggregate(x = outros_2017, list(estatuto = outros_2017$classificacao_sanitaria), FUN = length))
-outros_2017 <- outros_2017 %>% select(estatuto, exploracao_id)
-names(outros_2017) <- c("estatuto", "contagem")
+others_2017 <- as.data.frame(aggregate(x = others_2017, list(status = others_2017$classificacao_sanitaria), FUN = length))
+others_2017 <- others_2017 %>% select(status, exploracao_id)
+names(others_2017) <- c("status", "count")
 
-colheita_2017 <- as.data.frame(aggregate(x = colheita_2017, list(estatuto = colheita_2017$classificacao_sanitaria), FUN = length))
-colheita_2017 <- colheita_2017 %>% select(estatuto, exploracao_id)
-names(colheita_2017) <- c("estatuto", "contagem")
+collection_2017 <- as.data.frame(aggregate(x = collection_2017, list(status = collection_2017$classificacao_sanitaria), FUN = length))
+collection_2017 <- collection_2017 %>% select(status, exploracao_id)
+names(collection_2017) <- c("status", "count")
 
-prod_2017 <- as.data.frame(merge(recria_2017, producao_2017, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2017) <- c("estatuto", "recria", "producao")
-prod_2017 <- as.data.frame(merge(prod_2017, leitoes_2017, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2017) <- c("estatuto", "recria", "producao", "leitoes")
-prod_2017 <- as.data.frame(merge(prod_2017, selecao_2017, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2017) <- c("estatuto", "recria", "producao", "leitoes", "selecao")
-prod_2017 <- as.data.frame(merge(prod_2017, colheita_2017, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2017) <- c("estatuto", "recria", "producao", "leitoes", "colheita")
-prod_2017 <- as.data.frame(merge(prod_2017, outros_2017, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2017) <- c("estatuto", "recria", "producao", "leitoes", "colheita", "outros")
+prod_2017 <- as.data.frame(merge(rearing_2017, production_2017, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2017) <- c("status", "rearing", "production")
+prod_2017 <- as.data.frame(merge(prod_2017, piglets_2017, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2017) <- c("status", "rearing", "production", "piglets")
+prod_2017 <- as.data.frame(merge(prod_2017, selection_2017, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2017) <- c("status", "rearing", "production", "piglets", "selection")
+prod_2017 <- as.data.frame(merge(prod_2017, collection_2017, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2017) <- c("status", "rearing", "production", "piglets", "selection", "collection")
+prod_2017 <- as.data.frame(merge(prod_2017, others_2017, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2017) <- c("status", "rearing", "production", "piglets", "selection", "collection", "others")
+prod_2017 <- prod_2017[-8, ]
+
+prod_2017$year <- "2017"
 
   #2018#
-recria_2018 <- as.data.frame(aggregate(x = recria_2018, list(estatuto = recria_2018$classificacao_sanitaria), FUN = length))
-recria_2018 <- recria_2018 %>% select(estatuto, exploracao_id)
-names(recria_2018) <- c("estatuto", "contagem")
+rearing_2018 <- as.data.frame(aggregate(x = rearing_2018, list(status = rearing_2018$classificacao_sanitaria), FUN = length))
+rearing_2018 <- rearing_2018 %>% select(status, exploracao_id)
+names(rearing_2018) <- c("status", "count")
 
-producao_2018 <- as.data.frame(aggregate(x = producao_2018, list(estatuto = producao_2018$classificacao_sanitaria), FUN = length))
-producao_2018 <- producao_2018 %>% select(estatuto, exploracao_id)
-names(producao_2018) <- c("estatuto", "contagem")
+production_2018 <- as.data.frame(aggregate(x = production_2018, list(status = production_2018$classificacao_sanitaria), FUN = length))
+production_2018 <- production_2018 %>% select(status, exploracao_id)
+names(production_2018) <- c("status", "count")
 
-leitoes_2018 <- as.data.frame(aggregate(x = leitoes_2018, list(estatuto = leitoes_2018$classificacao_sanitaria), FUN = length))
-leitoes_2018 <- leitoes_2018 %>% select(estatuto, exploracao_id)
-names(leitoes_2018) <- c("estatuto", "contagem")
+piglets_2018 <- as.data.frame(aggregate(x = piglets_2018, list(status = piglets_2018$classificacao_sanitaria), FUN = length))
+piglets_2018 <- piglets_2018 %>% select(status, exploracao_id)
+names(piglets_2018) <- c("status", "count")
 
-selecao_2018 <- as.data.frame(aggregate(x = selecao_2018, list(estatuto = selecao_2018$classificacao_sanitaria), FUN = length))
-selecao_2018 <- selecao_2018 %>% select(estatuto, exploracao_id)
-names(selecao_2018) <- c("estatuto", "contagem")
+selection_2018 <- as.data.frame(aggregate(x = selection_2018, list(status = selection_2018$classificacao_sanitaria), FUN = length))
+selection_2018 <- selection_2018 %>% select(status, exploracao_id)
+names(selection_2018) <- c("status", "count")
 
-outros_2018 <- as.data.frame(aggregate(x = outros_2018, list(estatuto = outros_2018$classificacao_sanitaria), FUN = length))
-outros_2018 <- outros_2018 %>% select(estatuto, exploracao_id)
-names(outros_2018) <- c("estatuto", "contagem")
+others_2018 <- as.data.frame(aggregate(x = others_2018, list(status = others_2018$classificacao_sanitaria), FUN = length))
+others_2018 <- others_2018 %>% select(status, exploracao_id)
+names(others_2018) <- c("status", "count")
 
-colheita_2018 <- as.data.frame(aggregate(x = colheita_2018, list(estatuto = colheita_2018$classificacao_sanitaria), FUN = length))
-colheita_2018 <- colheita_2018 %>% select(estatuto, exploracao_id)
-names(colheita_2018) <- c("estatuto", "contagem")
+collection_2018 <- as.data.frame(aggregate(x = collection_2018, list(status = collection_2018$classificacao_sanitaria), FUN = length))
+collection_2018 <- collection_2018 %>% select(status, exploracao_id)
+names(collection_2018) <- c("status", "count")
 
-prod_2018 <- as.data.frame(merge(recria_2018, producao_2018, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2018) <- c("estatuto", "recria", "producao")
-prod_2018 <- as.data.frame(merge(prod_2018, leitoes_2018, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2018) <- c("estatuto", "recria", "producao", "leitoes")
-prod_2018 <- as.data.frame(merge(prod_2018, selecao_2018, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2018) <- c("estatuto", "recria", "producao", "leitoes", "selecao")
-prod_2018 <- as.data.frame(merge(prod_2018, colheita_2018, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2018) <- c("estatuto", "recria", "producao", "leitoes", "colheita")
-prod_2018 <- as.data.frame(merge(prod_2018, outros_2018, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2018) <- c("estatuto", "recria", "producao", "leitoes", "colheita", "outros")
+prod_2018 <- as.data.frame(merge(rearing_2018, production_2018, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2018) <- c("status", "rearing", "production")
+prod_2018 <- as.data.frame(merge(prod_2018, piglets_2018, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2018) <- c("status", "rearing", "production", "piglets")
+prod_2018 <- as.data.frame(merge(prod_2018, selection_2018, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2018) <- c("status", "rearing", "production", "piglets", "selection")
+prod_2018 <- as.data.frame(merge(prod_2018, collection_2018, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2018) <- c("status", "rearing", "production", "piglets", "selection", "collection")
+prod_2018 <- as.data.frame(merge(prod_2018, others_2018, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2018) <- c("status", "rearing", "production", "piglets", "selection", "collection", "others")
+prod_2018 <- prod_2018[-9, ]
+
+prod_2018$year <- "2018"
 
   #2019#
-recria_2019 <- as.data.frame(aggregate(x = recria_2019, list(estatuto = recria_2019$classificacao_sanitaria), FUN = length))
-recria_2019 <- recria_2019 %>% select(estatuto, exploracao_id)
-names(recria_2019) <- c("estatuto", "contagem")
+rearing_2019 <- as.data.frame(aggregate(x = rearing_2019, list(status = rearing_2019$classificacao_sanitaria), FUN = length))
+rearing_2019 <- rearing_2019 %>% select(status, exploracao_id)
+names(rearing_2019) <- c("status", "count")
 
-producao_2019 <- as.data.frame(aggregate(x = producao_2019, list(estatuto = producao_2019$classificacao_sanitaria), FUN = length))
-producao_2019 <- producao_2019 %>% select(estatuto, exploracao_id)
-names(producao_2019) <- c("estatuto", "contagem")
+production_2019 <- as.data.frame(aggregate(x = production_2019, list(status = production_2019$classificacao_sanitaria), FUN = length))
+production_2019 <- production_2019 %>% select(status, exploracao_id)
+names(production_2019) <- c("status", "count")
 
-leitoes_2019 <- as.data.frame(aggregate(x = leitoes_2019, list(estatuto = leitoes_2019$classificacao_sanitaria), FUN = length))
-leitoes_2019 <- leitoes_2019 %>% select(estatuto, exploracao_id)
-names(leitoes_2019) <- c("estatuto", "contagem")
+piglets_2019 <- as.data.frame(aggregate(x = piglets_2019, list(status = piglets_2019$classificacao_sanitaria), FUN = length))
+piglets_2019 <- piglets_2019 %>% select(status, exploracao_id)
+names(piglets_2019) <- c("status", "count")
 
-selecao_2019 <- as.data.frame(aggregate(x = selecao_2019, list(estatuto = selecao_2019$classificacao_sanitaria), FUN = length))
-selecao_2019 <- selecao_2019 %>% select(estatuto, exploracao_id)
-names(selecao_2019) <- c("estatuto", "contagem")
+selection_2019 <- as.data.frame(aggregate(x = selection_2019, list(status = selection_2019$classificacao_sanitaria), FUN = length))
+selection_2019 <- selection_2019 %>% select(status, exploracao_id)
+names(selection_2019) <- c("status", "count")
 
-outros_2019 <- as.data.frame(aggregate(x = outros_2019, list(estatuto = outros_2019$classificacao_sanitaria), FUN = length))
-outros_2019 <- outros_2019 %>% select(estatuto, exploracao_id)
-names(outros_2019) <- c("estatuto", "contagem")
+others_2019 <- as.data.frame(aggregate(x = others_2019, list(status = others_2019$classificacao_sanitaria), FUN = length))
+others_2019 <- others_2019 %>% select(status, exploracao_id)
+others_2019 <- others_2019[-1, ]
+names(others_2019) <- c("status", "count")
 
-colheita_2019 <- as.data.frame(aggregate(x = colheita_2019, list(estatuto = colheita_2019$classificacao_sanitaria), FUN = length))
-colheita_2019 <- colheita_2019 %>% select(estatuto, exploracao_id)
-names(colheita_2019) <- c("estatuto", "contagem")
+collection_2019 <- as.data.frame(aggregate(x = collection_2019, list(status = collection_2019$classificacao_sanitaria), FUN = length))
+collection_2019 <- collection_2019 %>% select(status, exploracao_id)
+names(collection_2019) <- c("status", "count")
 
-prod_2019 <- as.data.frame(merge(recria_2019, producao_2019, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2019) <- c("estatuto", "recria", "producao")
-prod_2019 <- as.data.frame(merge(prod_2019, leitoes_2019, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2019) <- c("estatuto", "recria", "producao", "leitoes")
-prod_2019 <- as.data.frame(merge(prod_2019, selecao_2019, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2019) <- c("estatuto", "recria", "producao", "leitoes", "selecao")
-prod_2019 <- as.data.frame(merge(prod_2019, colheita_2019, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2019) <- c("estatuto", "recria", "producao", "leitoes", "colheita")
-prod_2019 <- as.data.frame(merge(prod_2019, outros_2019, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2019) <- c("estatuto", "recria", "producao", "leitoes", "colheita", "outros")
+prod_2019 <- as.data.frame(merge(rearing_2019, production_2019, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2019) <- c("status", "rearing", "production")
+prod_2019 <- as.data.frame(merge(prod_2019, piglets_2019, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2019) <- c("status", "rearing", "production", "piglets")
+prod_2019 <- as.data.frame(merge(prod_2019, selection_2019, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2019) <- c("status", "rearing", "production", "piglets", "selection")
+prod_2019 <- as.data.frame(merge(prod_2019, collection_2019, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2019) <- c("status", "rearing", "production", "piglets", "selection", "collection")
+prod_2019 <- as.data.frame(merge(prod_2019, others_2019, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2019) <- c("status", "rearing", "production", "piglets", "selection", "collection", "others")
+prod_2019 <- prod_2019[-9, ]
+
+prod_2019$year <- "2019"
 
   #2020#
-recria_2020 <- as.data.frame(aggregate(x = recria_2020, list(estatuto = recria_2020$classificacao_sanitaria), FUN = length))
-recria_2020 <- recria_2020 %>% select(estatuto, exploracao_id)
-names(recria_2020) <- c("estatuto", "contagem")
+rearing_2020 <- as.data.frame(aggregate(x = rearing_2020, list(status = rearing_2020$classificacao_sanitaria), FUN = length))
+rearing_2020 <- rearing_2020 %>% select(status, exploracao_id)
+names(rearing_2020) <- c("status", "count")
 
-producao_2020 <- as.data.frame(aggregate(x = producao_2020, list(estatuto = producao_2020$classificacao_sanitaria), FUN = length))
-producao_2020 <- producao_2020 %>% select(estatuto, exploracao_id)
-names(producao_2020) <- c("estatuto", "contagem")
+production_2020 <- as.data.frame(aggregate(x = production_2020, list(status = production_2020$classificacao_sanitaria), FUN = length))
+production_2020 <- production_2020 %>% select(status, exploracao_id)
+names(production_2020) <- c("status", "count")
 
-leitoes_2020 <- as.data.frame(aggregate(x = leitoes_2020, list(estatuto = leitoes_2020$classificacao_sanitaria), FUN = length))
-leitoes_2020 <- leitoes_2020 %>% select(estatuto, exploracao_id)
-names(leitoes_2020) <- c("estatuto", "contagem")
+piglets_2020 <- as.data.frame(aggregate(x = piglets_2020, list(status = piglets_2020$classificacao_sanitaria), FUN = length))
+piglets_2020 <- piglets_2020 %>% select(status, exploracao_id)
+names(piglets_2020) <- c("status", "count")
 
-selecao_2020 <- as.data.frame(aggregate(x = selecao_2020, list(estatuto = selecao_2020$classificacao_sanitaria), FUN = length))
-selecao_2020 <- selecao_2020 %>% select(estatuto, exploracao_id)
-names(selecao_2020) <- c("estatuto", "contagem")
+selection_2020 <- as.data.frame(aggregate(x = selection_2020, list(status = selection_2020$classificacao_sanitaria), FUN = length))
+selection_2020 <- selection_2020 %>% select(status, exploracao_id)
+names(selection_2020) <- c("status", "count")
 
-outros_2020 <- as.data.frame(aggregate(x = outros_2020, list(estatuto = outros_2020$classificacao_sanitaria), FUN = length))
-outros_2020 <- outros_2020 %>% select(estatuto, exploracao_id)
-names(outros_2020) <- c("estatuto", "contagem")
+others_2020 <- as.data.frame(aggregate(x = others_2020, list(status = others_2020$classificacao_sanitaria), FUN = length))
+others_2020 <- others_2020 %>% select(status, exploracao_id)
+names(others_2020) <- c("status", "count")
 
-colheita_2020 <- as.data.frame(aggregate(x = colheita_2020, list(estatuto = colheita_2020$classificacao_sanitaria), FUN = length))
-colheita_2020 <- colheita_2020 %>% select(estatuto, exploracao_id)
-names(colheita_2020) <- c("estatuto", "contagem")
+collection_2020 <- as.data.frame(aggregate(x = collection_2020, list(status = collection_2020$classificacao_sanitaria), FUN = length))
+collection_2020 <- collection_2020 %>% select(status, exploracao_id)
+names(collection_2020) <- c("status", "count")
 
-prod_2020 <- as.data.frame(merge(recria_2020, producao_2020, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2020) <- c("estatuto", "recria", "producao")
-prod_2020 <- as.data.frame(merge(prod_2020, leitoes_2020, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2020) <- c("estatuto", "recria", "producao", "leitoes")
-prod_2020 <- as.data.frame(merge(prod_2020, selecao_2020, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2020) <- c("estatuto", "recria", "producao", "leitoes", "selecao")
-prod_2020 <- as.data.frame(merge(prod_2020, colheita_2020, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2020) <- c("estatuto", "recria", "producao", "leitoes", "colheita")
-prod_2020 <- as.data.frame(merge(prod_2020, outros_2020, by.x = "estatuto", by.y = "estatuto", all = TRUE))
-names(prod_2020) <- c("estatuto", "recria", "producao", "leitoes", "colheita", "outros")
+prod_2020 <- as.data.frame(merge(rearing_2020, production_2020, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2020) <- c("status", "rearing", "production")
+prod_2020 <- as.data.frame(merge(prod_2020, piglets_2020, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2020) <- c("status", "rearing", "production", "piglets")
+prod_2020 <- as.data.frame(merge(prod_2020, selection_2020, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2020) <- c("status", "rearing", "production", "piglets", "selection")
+prod_2020 <- as.data.frame(merge(prod_2020, collection_2020, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2020) <- c("status", "rearing", "production", "piglets", "selection", "collection")
+prod_2020 <- as.data.frame(merge(prod_2020, others_2020, by.x = "status", by.y = "status", all = TRUE))
+names(prod_2020) <- c("status", "rearing", "production", "piglets", "selection", "collection", "others")
+prod_2020 <- prod_2020[-9, ]
+
+prod_2020$year <- "2020"
+
+### Merge all in one table
+prod_year <- rbind(prod_2016, prod_2017, prod_2018, prod_2019, prod_2020)
+
+### Substitue all NA with 0
+prod_year[is.na(prod_year)] = 0
+
+### Reshape table to plot
+prod_year <- as.data.frame(melt(prod_year, id.vars = c("status", "year"), measure.vars = c("rearing", "production", "piglets", "selection", "collection", "others")))
+names(prod_year)[3:4] <- c("production", "count")
+
+### Year as Date
+prod_year$year <- as.Date(prod_year$year, format = "%Y")
+prod_year$year <- format(as.Date(prod_year$year, format = "%Y-%m-%d"), "%Y")
+
+## Stacked bar plot
+ggplot(prod_year, aes(fill = production, y = count, x = status)) +
+  geom_bar(position = "stack", stat = "identity") + 
+  scale_fill_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("Number of farms by type of production in each status over the years") + 
+  facet_wrap(~year) + 
+  labs(y = "Number of farms",
+       x = "Status", 
+       caption = "Fonte: DGAV",
+       fill = "Production type")
+
+## Line chart for each status
+a1 <- prod_year %>% filter(prod_year$status == "A1")
+
+ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A1 Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
 
 
+a2 <- prod_year %>% filter(prod_year$status == "A2")
 
-##Gráfico de barras (grouped barplot) por anos e classificações por barra (A1, A2, A3, A4, A5), divididas por tipo de exploração (stacked);
-##Mapa com várias explorações e respetiva informação (PLOTLY): nº animais, tipo exploração, classificação ...;
-##Pie chart ou semelhante com % explorações por classificação sanitária;
+ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A2 Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
 
 
+a2a <- prod_year %>% filter(prod_year$status == "A2A")
+
+ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A2A Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
+
+
+a2na <- prod_year %>% filter(prod_year$status == "A2NA")
+
+ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A2NA Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
+
+
+a3 <- prod_year %>% filter(prod_year$status == "A3")
+
+ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A3 Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
+
+
+a4 <- prod_year %>% filter(prod_year$status == "A4")
+
+ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A4 Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
+
+
+a5 <- prod_year %>% filter(prod_year$status == "A5")
+
+ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) + 
+  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  theme_pubclean() + 
+  theme(legend.position = "bottom") + 
+  ggtitle("A5 Status - Number of farms by type of production over the years") + 
+  labs(y = "Number of farms",
+       x = "Year", 
+       caption = "Fonte: DGAV",
+       color = "Production type")
+
+# 2.2 Current farms by status
+## Table with current status by farm 
+now_status <- as.data.frame(merge(exploracoes, classificacoes, by.x = "exploracao", by.y = "exploracao_id", all = TRUE))
+
+now_status <- unique(now_status)
+
+now_status <- now_status %>% group_by(exploracao)
+now_status <- now_status %>% select(exploracao, longitude, latitude, data, tipo_instalacao, classificacao_sanitaria)
+
+### Remove SC
+now_status <- now_status %>% filter(classificacao_sanitaria != "SC")
+
+### Select the last change os status in each farm
+now_status <- subset(now_status, data <= "2020-12-31")
+now_status <- setDT(now_status)[order(exploracao, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao)]
+
+### Remove NA
+now_status <- na.omit(now_status)
+
+### Merge with Count table to get the numer of animals by farm
+now_status <- merge(now_status, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+now_status <- now_status %>% select(exploracao, longitude.x, latitude.x, total, tipo_instalacao, classificacao_sanitaria )
+names(now_status)[2:3] <- c("longitude", "latitude")
+
+### Add the word "animals" to the total and replace the NA with a blank space
+now_status$total <- paste0(now_status$total, " ", "animals")
+now_status$total <- replace(now_status$total, now_status$total == "NA animals", " ")
+
+
+### Add column with info for map
+now_status$info <- paste0(now_status$exploracao, "<br>", now_status$tipo_instalacao, "<br>", now_status$classificacao_sanitaria, "<br>", now_status$total)
+
+## Map with farms colored by status
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_scatterplot(data = now_status, 
+                  lat = "latitude",
+                  lon = "longitude",
+                  radius = 1500,
+                  fill_colour = "classificacao_sanitaria",
+                  layer_id = "scatter_layer",
+                  legend = TRUE,
+                  tooltip = "info", 
+                  legend_options = list(fill_colour = list(title = "Farm's status")),
+                  palette = "spectral")
+
+
+## Percentage of farms by status
+### Table with number of farms by status 
+status_percentage <- as.data.frame(aggregate(x = now_status, list(status = now_status$classificacao_sanitaria), FUN = length))
+status_percentage <- status_percentage %>% select(status, total)
+status_percentage <- status_percentage[-1, ]
+
+### Add column with total number of farms
+status_percentage$sum <- sum(status_percentage$total)
+
+### Add column with percentage
+status_percentage$percentage <- (status_percentage$total / status_percentage$sum) * 100
+status_percentage$percentage <- round(status_percentage$percentage, digits = 1)
+
+### Add column with label
+status_percentage$label <- paste0(status_percentage$status, " ", "(", status_percentage$percentage, "%", ")")
+
+## Piechart
+ggplot(status_percentage, aes(x = "", y = percentage, fill = status)) +
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar(theta = "y", start = 0) + 
+  scale_fill_brewer(palette = "Set3", labels = status_percentage$label ) +
+  theme_void() + 
+  theme(legend.position = "right") + 
+  ggtitle("Percentage of farms by status") + 
+  labs(caption = "Fonte: DGAV",
+       fill = "Status") 
 
 
 
