@@ -137,8 +137,9 @@ class <- as.data.frame(merge(contagens, classificacoes, by.x = "exploracao", by.
 
 class %>% select(exploracao, data, longitude, latitude, svl, classificacao_sanitaria)
 
-class %>%
-  dplyr::filter(DATE1 >= as.POSIXct('2018-01-01'))
+### Select only declaracao_existencias from 2020
+count <- count %>%
+  filter(count$data > as.Date("2020-01-01"))
 
 
 
