@@ -99,8 +99,6 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 
 
 
-
-
 # 1.2.1 - Number of animals by LVS
 ## Table with total of animals by LVS
 count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
@@ -545,6 +543,85 @@ ggplotly(status_percent_graph, tooltip = "text") %>%
 
 
 # 3. Abates
+# 3.1 Number of animals slaughtered by farm in 2019
+## Table with animals slaughtered by farm in 2019
+### Change date format
+animais_abatidos$data_de_entrada <- strftime(animais_abatidos$data_de_entrada, format = "%Y-%m-%d")
+animais_abatidos$data_de_entrada <- as.Date(animais_abatidos$data_de_entrada)
+
+### Select 2019 slaghters
+slaughter_2019 <- animais_abatidos %>% filter(data_de_entrada <= "2019-12-31" & data_de_entrada >= "2019-01-01")
+
+### Remove farms without location
+slaughter_2019 <- slaughter_2019 %>% filter(long_exploracao != "NA")
+
+### Total number of animals slaghtered by farm
+slaughter_2019_total <- aggregate(slaughter_2019$confirmados, by = list(slaughter_2019$exploracao, slaughter_2019$long_exploracao, slaughter_2019$lat_exploracao), FUN = sum)
+names(slaughter_2019_total) <- c("exploracao", "longitude", "latitude", "count")
+slaughter_2019_total$count <- as.numeric(slaughter_2019_total$count)
+
+### Define categories
+slaughter_2019_total$categ <- cut(slaughter_2019_total$count, c(0,50,500,1000,2500,5000,10000,50000,100000,250000))
+levels(slaughter_2019_total$categ) <- c("0;50", "50;500", "500;1000", "1000;2500", "2500;5000", "5000;10000", "10000;50000", "50000;100000", "100000;250000")
+
+## Add info for label
+slaughter_2019_total$info <- paste0(slaughter_2019_total$exploracao, "<br>", slaughter_2019_total$count, " animals slaughtered")
+
+
+## Map with number of animals slaughtered by farm
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_scatterplot(data = slaughter_2019_total,
+                  lat = "latitude",
+                  lon = "longitude", 
+                  radius = 2000,
+                  fill_colour = "categ", 
+                  legend = TRUE,
+                  tooltip = "info",
+                  layer_id = "scatter_layer",
+                  legend_options = list(fill_colour = list(title = "Number of animals slaughtered by farm in 2019")),
+                  palette = "heat_hcl")
+
+
+# 3.2 Principal itineraries to the slaughterhouses in 2019
+## Table with all slaughter itineraries in 2019
+### Remove slaughterhouses without location
+itineraries_2019 <- slaughter_2019 %>% filter(long_matadouro != "NA")
+
+### Select only columns that matter
+itineraries_2019 <- itineraries_2019 %>% select(exploracao, long_exploracao, lat_exploracao, matadouro, long_matadouro, lat_matadouro)
+
+### Give each row a number
+itineraries_2019 <- itineraries_2019 %>% mutate(count = 1)
+
+### Count frequency of each itinerarie
+itineraries_2019 <- as.data.frame(aggregate(itineraries_2019$count, by = list(itineraries_2019$exploracao, itineraries_2019$long_exploracao, itineraries_2019$lat_exploracao, itineraries_2019$matadouro, itineraries_2019$long_matadouro, itineraries_2019$lat_matadouro), FUN = sum))
+names(itineraries_2019) <- c("exploracao", "long_exploracao", "lat_exploracao", "matadouro", "long_matadouro", "lat_matadouro", "freq")
+
+### Select only itineraries with freq > 10
+itineraries_2019 <- itineraries_2019 %>% filter(freq >= 50)
+
+### Define categories for the frequency
+itineraries_2019$categ <- cut(itineraries_2019$freq, c(50,100,150,200,250,400,550))
+levels(itineraries_2019$categ) <- c("50,100","100,150", "150,200", "200,250", "250,400", "400,550")
+
+### Add label column 
+itineraries_2019$info <- paste0(itineraries_2019$exploracao, " to ", itineraries_2019$matadouro, "<br>", itineraries_2019$freq, " trips")
+
+## Map with itineraries by frequency in 2019
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_line(data = itineraries_2019, 
+          layer_id = "arc_layer",
+          origin = c("long_exploracao", "lat_exploracao"),
+          destination = c("long_matadouro", "lat_matadouro"),
+          stroke_colour = "categ",
+          stroke_width = "stroke",
+          tooltip = "info",
+          legend = TRUE, 
+          legend_options = list(stroke_colour = list(title = "Most frequent itineraries between farms and slaughterhouses in 2019")),
+          palette = "ylorrd")
+            
+          
+
 ##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 ##Geom_line para avaliar o nº abates ao longo do tempo (mensal) // DSAVR ou SVL
 
