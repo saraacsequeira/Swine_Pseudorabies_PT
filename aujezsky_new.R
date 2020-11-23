@@ -188,21 +188,31 @@ class_last <- class_last %>%
 classification_count <- class %>%
   mutate(count = 1)
 
+## Add the numer of animals by farm
+### Merge tables
+class_last <- merge(class_last, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+class_last <- class_last %>% select(exploracao, longitude.x, latitude.x, svl.x, classificacao_sanitaria, total)
+names(class_last)[2:3] <- c("longitude", "latitude")
+
+### Add the word "animals" to the total and replace the NA with a blank space
+class_last$total <- paste0(class_last$total, " ", "animals")
+class_last$total <- replace(class_last$total, class_last$total == "NA animals", " ")
+
 ## Map with the last classification for each farm
 ### Add label
-class_last$info1 <- paste0(class_last$exploracao, "<br>", class_last$svl, "<br>", class_last$classificacao_sanitaria, " ", "(2020)", "<br>")
+class_last$info1 <- paste0(class_last$exploracao, "<br>", class_last$svl, "<br>", class_last$classificacao_sanitaria, " ", "(2020)", "<br>", class_last$total)
 
-mapdeck(token = token, style = mapdeck_style("light"), pitch = 20) %>%
+mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
   add_scatterplot(data = class_last, 
                   lat = "latitude", 
                   lon = "longitude",
-                  radius = 200,
+                  radius = 500,
                   fill_colour = "classificacao_sanitaria",
                   legend = TRUE, 
                   tooltip = "info1",
                   layer_id = "point",
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
-                  palette = "viridis")
+                  palette = "spectral")
 
 ## Map - percentage of status by SVL (in 2020) ??????
 
@@ -241,7 +251,7 @@ names(status_by_year2) <- c("year", "status", "count")
 
 ## Remove A0 and SC status
 status_by_year2 <- as.data.frame(status_by_year2[!status_by_year2$status == "A0" & !status_by_year2$status == "SC",])
-############### SARA
+
 
 ## Barplot
 status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = status)) + 
@@ -278,8 +288,6 @@ ggplotly(status_by_year_graph, tooltip = "text") %>%
 
 
 ## Number of farms by type of production and by status in each year
-
-############ SARA
 ### Remove A0 and SC status
 status <- as.data.frame(status[!status$classificacao_sanitaria == "A0" & !status$classificacao_sanitaria == "SC",])
 
@@ -297,24 +305,16 @@ farms_production_status <- farms_production_status %>%
   arrange(Group.1, Group.3, Group.2)
 
 names(farms_production_status) <- c("status", "year", "production", "count")
-############# SARA
-
-
-
-
 
 ### Year as Date
 farms_production_status$year <- as.Date(farms_production_status$year, format = "%Y")
 farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
 
-farms_production_status$year <- as.Date(farms_production_status$year), format = "%Y")
-farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
-
 
 ## Stacked bar plot
-ggplot(prod_year, aes(fill = production, y = count, x = status)) +
+ggplot(farms_production_status, aes(fill = production, y = count, x = status)) +
   geom_bar(position = "stack", stat = "identity") + 
-  scale_fill_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_fill_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("Number of farms by type of production in each status over the years") + 
@@ -325,12 +325,13 @@ ggplot(prod_year, aes(fill = production, y = count, x = status)) +
        fill = "Production type")
 
 ## Line chart for each status
-a1 <- prod_year %>% filter(prod_year$status == "A1")
+
+a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
 
 ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A1 Status - Number of farms by type of production over the years") + 
@@ -340,12 +341,12 @@ ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a2 <- prod_year %>% filter(prod_year$status == "A2")
+a2 <- farms_production_status %>% filter(farms_production_status$status == "A2")
 
 ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2 Status - Number of farms by type of production over the years") + 
@@ -355,12 +356,12 @@ ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a2a <- prod_year %>% filter(prod_year$status == "A2A")
+a2a <- farms_production_status %>% filter(farms_production_status$status == "A2A")
 
 ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2A Status - Number of farms by type of production over the years") + 
@@ -370,12 +371,12 @@ ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a2na <- prod_year %>% filter(prod_year$status == "A2NA")
+a2na <- farms_production_status %>% filter(farms_production_status$status == "A2NA")
 
 ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2NA Status - Number of farms by type of production over the years") + 
@@ -385,12 +386,12 @@ ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a3 <- prod_year %>% filter(prod_year$status == "A3")
+a3 <- farms_production_status %>% filter(farms_production_status$status == "A3")
 
 ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A3 Status - Number of farms by type of production over the years") + 
@@ -400,12 +401,12 @@ ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a4 <- prod_year %>% filter(prod_year$status == "A4")
+a4 <- farms_production_status %>% filter(farms_production_status$status == "A4")
 
 ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A4 Status - Number of farms by type of production over the years") + 
@@ -415,12 +416,12 @@ ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
        color = "Production type")
 
 
-a5 <- prod_year %>% filter(prod_year$status == "A5")
+a5 <- farms_production_status %>% filter(farms_production_status$status == "A5")
 
 ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2) + 
-  scale_color_brewer(palette = "Accent", labels = c("Rearing and finishing farms", "Production farms", "Piglet production farms", "Selection and breeding farms", "Semen collection centers", "Others")) +
+  scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A5 Status - Number of farms by type of production over the years") + 
@@ -429,64 +430,19 @@ ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
        caption = "Fonte: DGAV",
        color = "Production type")
 
-# 2.2 Current farms by status
-## Table with current status by farm 
-now_status <- as.data.frame(merge(exploracoes, classificacoes, by.x = "exploracao", by.y = "exploracao_id", all = TRUE))
-
-now_status <- unique(now_status)
-
-now_status <- now_status %>% group_by(exploracao)
-now_status <- now_status %>% select(exploracao, longitude, latitude, data, tipo_instalacao, classificacao_sanitaria)
-
-### Remove SC
-now_status <- now_status %>% filter(classificacao_sanitaria != "SC")
-
-### Select the last change os status in each farm
-now_status <- subset(now_status, data <= "2020-12-31")
-now_status <- setDT(now_status)[order(exploracao, -as.IDate(data, "%Y-%m-%d"))][!duplicated(exploracao)]
-
-### Remove NA
-now_status <- na.omit(now_status)
-
-### Merge with Count table to get the numer of animals by farm
-now_status <- merge(now_status, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
-now_status <- now_status %>% select(exploracao, longitude.x, latitude.x, total, tipo_instalacao, classificacao_sanitaria )
-names(now_status)[2:3] <- c("longitude", "latitude")
-
-### Add the word "animals" to the total and replace the NA with a blank space
-now_status$total <- paste0(now_status$total, " ", "animals")
-now_status$total <- replace(now_status$total, now_status$total == "NA animals", " ")
-
-
-### Add column with info for map
-now_status$info <- paste0(now_status$exploracao, "<br>", now_status$tipo_instalacao, "<br>", now_status$classificacao_sanitaria, "<br>", now_status$total)
-
-## Map with farms colored by status
-mapdeck(token = token, style = mapdeck_style("dark")) %>%
-  add_scatterplot(data = now_status, 
-                  lat = "latitude",
-                  lon = "longitude",
-                  radius = 1500,
-                  fill_colour = "classificacao_sanitaria",
-                  layer_id = "scatter_layer",
-                  legend = TRUE,
-                  tooltip = "info", 
-                  legend_options = list(fill_colour = list(title = "Farm's status")),
-                  palette = "spectral")
-
 
 ## Percentage of farms by status
 ### Table with number of farms by status 
-status_percentage <- as.data.frame(aggregate(x = now_status, list(status = now_status$classificacao_sanitaria), FUN = length))
+status_percentage <- as.data.frame(aggregate(x = class_last, list(status = class_last$classificacao_sanitaria), FUN = length))
 status_percentage <- status_percentage %>% select(status, total)
-status_percentage <- status_percentage[-1, ]
+status_percentage <- status_percentage[-10, ]
 
 ### Add column with total number of farms
 status_percentage$sum <- sum(status_percentage$total)
 
 ### Add column with percentage
 status_percentage$percentage <- (status_percentage$total / status_percentage$sum) * 100
-status_percentage$percentage <- round(status_percentage$percentage, digits = 1)
+status_percentage$percentage <- round(status_percentage$percentage, digits = 2)
 
 ### Add column with label
 status_percentage$label <- paste0(status_percentage$status, " ", "(", status_percentage$percentage, "%", ")")

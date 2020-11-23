@@ -106,7 +106,7 @@ names(count_svl) <- c("class", "svl", "count")
 
 count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
 names(count_svl_total) <- c("svl", "total")
-count_svl_total$total <- as.numeric(count_total$total)
+count_svl_total$total <- as.numeric(count_svl_total$total)
 
 ## Plot with total number of animals by LVS
 ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
@@ -122,7 +122,7 @@ ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) +
 
 # 1.2.2 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
-count_svl <- as.data.frame(merge(count_svl, count_total, by.x = "svl", by.y = "svl"))
+count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
 
 count_svl$count <- as.numeric(count_svl$count)
@@ -657,7 +657,7 @@ now_status <- setDT(now_status)[order(exploracao, -as.IDate(data, "%Y-%m-%d"))][
 ### Remove NA
 now_status <- na.omit(now_status)
 
-### Merge with Count table to get the numer of animals by farm
+### Merge with Count table to get the number of animals by farm
 now_status <- merge(now_status, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
 now_status <- now_status %>% select(exploracao, longitude.x, latitude.x, total, tipo_instalacao, classificacao_sanitaria )
 names(now_status)[2:3] <- c("longitude", "latitude")
