@@ -109,40 +109,45 @@ names(count_svl) <- c("class", "svl", "count")
 
 count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
 names(count_svl_total) <- c("svl", "total")
-count_svl_total$total <- as.numeric(count_total$total)
+count_svl_total$total <- as.numeric(count_svl_total$total)
+
+### Remove scientific notation
+options(scipen=999)
 
 ## Plot with total number of animals by LVS
-ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
-  geom_bar(stat = "identity") + 
+count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
+  geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
   coord_flip() + 
   theme_light() +
   theme(legend.position = "none") +
   labs( title = "Number of animals by LVS", size = 15,
         y = "Number of animals",
         x = "Local Veterinary Service", 
-        caption = "Fonte: DGAV") + 
-  geom_text(aes(label=total), vjust = 0.3, hjust = 0, size = 2)
+        caption = "Fonte: DGAV")
 
-
-
-
-
-
+## Mapa interativo
+ggplotly(count_svl_total_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+                                       "Local Veterinary Service",
+                                       rep("&nbsp;", 30),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
 
 
 # 1.2.2 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
-count_svl <- as.data.frame(merge(count_svl, count_total, by.x = "svl", by.y = "svl"))
+count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
 
 count_svl$count <- as.numeric(count_svl$count)
 count_svl$total <- as.numeric(count_svl$total)
 count_svl$percentage <- (count_svl$count / count_svl$total * 100)
-names(count_svl)[5] <- "percentage"
+count_svl$percentage <- round(count_svl$percentage, digits = 2)
 
 ## Plot with percentage of animals by class in each LVS
-ggplot(count_svl, aes(fill = class, y = percentage, x = svl)) + 
-  geom_bar(position = "fill", stat = "identity") +
+count_svl_graph <- ggplot(count_svl, aes(fill = class, y = percentage, x = svl)) + 
+  geom_bar(position = "fill", stat = "identity", aes(text = paste0(percentage, "%"))) +
   theme_light() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_fill_brewer(palette = "Set2", labels = c("Weaners", "Piglets", "Sows", "Pigs", "Boars")) +
@@ -152,16 +157,14 @@ ggplot(count_svl, aes(fill = class, y = percentage, x = svl)) +
         caption = "Fonte: DGAV",
         fill = "")
 
-
-
-
-
-
-
-
-
-
-
+##Mapa interativo
+ggplotly(count_svl_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+                                       "Percentage",
+                                       rep("&nbsp;", 30),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
 
 
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
@@ -240,28 +243,27 @@ status <- unique(status)
 ### Add column with year
 status$year <- format(as.Date(status$data, format="%d/%m/%Y"),"%Y")
 
-########## SARA
 ### Give each row a number
 status <- status %>%
   mutate(count = 1)
 
 ### Find the number of farms for each status
-status_by_year2 <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
-names(status_by_year2) <- c("year", "status", "count")
+status_by_year <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
+names(status_by_year) <- c("year", "status", "count")
 
 ## Remove A0 and SC status
-status_by_year2 <- as.data.frame(status_by_year2[!status_by_year2$status == "A0" & !status_by_year2$status == "SC",])
+status_by_year <- as.data.frame(status_by_year[!status_by_year$status == "A0" & !status_by_year$status == "SC",])
 
 
 ## Barplot
-status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = status)) + 
+status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = status)) + 
   geom_bar(stat = "identity", position = "dodge", aes(text = paste('Year: ', year,
                                                                    '<br>Status: ', status,
-                                                                   '<br>Nº of Farms: ', count))) + 
+                                                                   '<br>Nr. of Farms: ', count))) + 
   theme_light() +
   theme() +
   scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(ylim = c(0, max(status_by_year2$count + 500))) +
+  coord_cartesian(ylim = c(0, max(status_by_year$count + 500))) +
   
   scale_fill_brewer(palette = "Set3") + 
   labs( title = "Number of farms per status over the years", size = 15,
@@ -310,125 +312,198 @@ names(farms_production_status) <- c("status", "year", "production", "count")
 farms_production_status$year <- as.Date(farms_production_status$year, format = "%Y")
 farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
 
+### Chane to english
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Centro de Colheita de sémen", "Semen Collection Center")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Montanheira", "Mountain")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Outros", "Others")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Produção", "Production of Pigs")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Produção de Leitões", "Production of Piglets")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Quarentena", "Quarentine")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Recria e/ou acabamento", "Rearing and/or Finisher")
+farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Seleção e/ou multiplicação", "Selection and/or Breeding")
 
 ## Stacked bar plot
-ggplot(farms_production_status, aes(fill = production, y = count, x = status)) +
-  geom_bar(position = "stack", stat = "identity") + 
+farms_production_graph <- ggplot(farms_production_status, aes(fill = production, y = count, x = status)) +
+  geom_bar(position = "stack", stat = "identity", aes(text = paste0(production, " - ", count, " ", "farms"))) + 
   scale_fill_brewer(palette = "Accent") +
   theme_pubclean() + 
-  theme(legend.position = "bottom") + 
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + 
   ggtitle("Number of farms by type of production in each status over the years") + 
   facet_wrap(~year) + 
-  labs(y = "Number of farms",
-       x = "Status", 
+  labs(y = " ",
+       x = " ", 
        caption = "Fonte: DGAV",
-       fill = "Production type")
+       fill = " ")
+
+ggplotly(farms_production_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
 ## Line chart for each status
-
+### A1 ggplot
 a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
 
-ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
+a1_graph <- ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
-  theme(legend.position = "bottom") + 
+  theme() + 
   ggtitle("A1 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A1 mapa interativo
+ggplotly(a1_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A2 ggplot
 a2 <- farms_production_status %>% filter(farms_production_status$status == "A2")
 
-ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
+a2_graph <- ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A2 mapa interativo
+ggplotly(a2_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A2A ggplot
 a2a <- farms_production_status %>% filter(farms_production_status$status == "A2A")
 
-ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
+a2a_graph <- ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2A Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A2A mapa interativo
+ggplotly(a2a_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A2NA ggplot
 a2na <- farms_production_status %>% filter(farms_production_status$status == "A2NA")
 
-ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
+a2na_graph <- ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2NA Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A2NA mapa interativo
+ggplotly(a2na_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A3 ggplot
 a3 <- farms_production_status %>% filter(farms_production_status$status == "A3")
 
-ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
+a3_graph <- ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A3 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A3 mapa interativo
+ggplotly(a3_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A4 ggplot
 a4 <- farms_production_status %>% filter(farms_production_status$status == "A4")
 
-ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
+a4_graph <- ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A4 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
 
+### A4 mapa interativo
+ggplotly(a4_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
+### A5 ggplot
 a5 <- farms_production_status %>% filter(farms_production_status$status == "A5")
 
-ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
+a5_graph <- ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
-  geom_point(size = 2) + 
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
   ggtitle("A5 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
-       x = "Year", 
-       caption = "Fonte: DGAV",
-       color = "Production type")
+       x = "Year",
+       color = " ")
+
+### A5 mapa interativo
+ggplotly(a5_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
 
 ## Percentage of farms by status
@@ -447,18 +522,26 @@ status_percentage$percentage <- round(status_percentage$percentage, digits = 2)
 ### Add column with label
 status_percentage$label <- paste0(status_percentage$status, " ", "(", status_percentage$percentage, "%", ")")
 
-## Piechart
-ggplot(status_percentage, aes(x = "", y = percentage, fill = status)) +
-  geom_bar(stat = "identity", width = 1) + 
-  coord_polar(theta = "y", start = 0) + 
-  scale_fill_brewer(palette = "Set3", labels = status_percentage$label ) +
-  theme_void() + 
+## Lollipop chart
+status_percent_graph <- ggplot(status_percentage, aes(x = status, y = percentage, color = status)) +
+  geom_point(size = 5, aes(text = label)) + 
+  geom_segment(aes(x = status,xend = status,  y = 0, yend = percentage), linetype = "dotted", color = "grey60") +
+  scale_color_brewer(palette = "Set3") +
+  theme_minimal() + 
   theme(legend.position = "right") + 
   ggtitle("Percentage of farms by status") + 
   labs(caption = "Fonte: DGAV",
-       fill = "Status") 
+       color = " ",
+       x = "Status") 
 
-
+## Mapa interativo
+ggplotly(status_percent_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Percentage (%)",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
 
 
 # 3. Abates
