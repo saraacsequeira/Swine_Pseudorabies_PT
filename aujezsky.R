@@ -600,10 +600,6 @@ names(itineraries_2019) <- c("exploracao", "long_exploracao", "lat_exploracao", 
 ### Select only itineraries with freq > 10
 itineraries_2019 <- itineraries_2019 %>% filter(freq >= 50)
 
-### Define categories for the frequency
-itineraries_2019$categ <- cut(itineraries_2019$freq, c(50,100,150,200,250,400,550))
-levels(itineraries_2019$categ) <- c("50,100","100,150", "150,200", "200,250", "250,400", "400,550")
-
 ### Add label column 
 itineraries_2019$info <- paste0(itineraries_2019$exploracao, " to ", itineraries_2019$matadouro, "<br>", itineraries_2019$freq, " trips")
 
@@ -617,7 +613,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
           stroke_to = "matadouro",
           stroke_width = "stroke",
           tooltip = "info",
-          palette = "ylorrd")
+          palette = "viridis")
             
           
 
