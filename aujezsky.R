@@ -609,15 +609,14 @@ itineraries_2019$info <- paste0(itineraries_2019$exploracao, " to ", itineraries
 
 ## Map with itineraries by frequency in 2019
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
-  add_line(data = itineraries_2019, 
+  add_arc(data = itineraries_2019, 
           layer_id = "arc_layer",
           origin = c("long_exploracao", "lat_exploracao"),
           destination = c("long_matadouro", "lat_matadouro"),
-          stroke_colour = "categ",
+          stroke_from = "exploracao",
+          stroke_to = "matadouro",
           stroke_width = "stroke",
           tooltip = "info",
-          legend = TRUE, 
-          legend_options = list(stroke_colour = list(title = "Most frequent itineraries between farms and slaughterhouses in 2019")),
           palette = "ylorrd")
             
           
