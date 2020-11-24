@@ -81,7 +81,7 @@ count <- na.omit(count)
 
 ### Define categories based on total animals
 count$categoria <- cut(count$total, c(0,50,100,250,500,750,1000,2500,5000,10000,25000,50000))
-levels(count$categoria) <- c("0:50", "50:100", "100:250", "250:500", "500:750", "750:1000", "1000:2500", "2500:5000", "5000:10000", "10000:25000", "25000:50000")
+levels(count$categoria) <- c("0;50", "50;100", "100;250", "250;500", "500;750", "750;1000", "1000;2500", "2500;5000", "5000;10000", "10000;25000", "25000;50000")
 
 
 ### Mapdeck
@@ -96,6 +96,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals by farm")),
                   palette = "inferno")
+
 
 
 # 1.2.1 - Number of animals by LVS
@@ -132,8 +133,6 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
          legend = list(x = 1, y = 0))
 
 
-
-
 # 1.2.2 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
 count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
@@ -156,7 +155,7 @@ count_svl_graph <- ggplot(count_svl, aes(fill = class, y = percentage, x = svl))
         caption = "Fonte: DGAV",
         fill = "")
 
-##Mapa interativo
+##Interactive graph
 ggplotly(count_svl_graph, tooltip = "text") %>% 
   layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
                                        "Percentage",
@@ -164,9 +163,6 @@ ggplotly(count_svl_graph, tooltip = "text") %>%
                                        rep("\n&nbsp;", 2)),
                                      collapse = "")),
          legend = list(x = 1, y = 0))
-
-
-
 
 
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
@@ -193,16 +189,6 @@ class_last <- class_last %>%
 classification_count <- class %>%
   mutate(count = 1)
 
-## Map with the last classification for each farm
-### Add label
-class_last$info1 <- paste0(class_last$exploracao, "<br>", class_last$svl, "<br>", class_last$classificacao_sanitaria, " ", "(2020)", "<br>")
-
-mapdeck(token = token, style = mapdeck_style("light"), pitch = 20) %>%
-  add_scatterplot(data = class_last, 
-                  lat = "latitude", 
-                  lon = "longitude",
-                  radius = 200
-
 ## Add the numer of animals by farm
 ### Merge tables
 class_last <- merge(class_last, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
@@ -228,7 +214,6 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   layer_id = "point",
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
                   palette = "spectral")
-
 
 ## Map - percentage of status by SVL (in 2020) ??????
 
@@ -261,29 +246,11 @@ status <- status %>%
   mutate(count = 1)
 
 ### Find the number of farms for each status
-status_by_year2 <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
-names(status_by_year2) <- c("year", "status", "count")
-
-## Remove A0 and SC status
-status_by_year2 <- as.data.frame(status_by_year2[!status_by_year2$status == "A0" & !status_by_year2$status == "SC",])
-
-
-## Barplot
-status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = status)) + 
-  geom_bar(stat = "identity", position = "dodge", aes(text = paste('Year: ', year,
-                                                                   '<br>Status: ', status,
-                                                                   '<br>Nº of Farms: ', count))) + 
-  theme_light() +
-  theme() +
-  scale_y_continuous(expand = c(0, 0)) +
-  coord_cartesian(ylim = c(0, max(status_by_year2$count + 500))) +
-
 status_by_year <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
 names(status_by_year) <- c("year", "status", "count")
 
 ## Remove A0 and SC status
 status_by_year <- as.data.frame(status_by_year[!status_by_year$status == "A0" & !status_by_year$status == "SC",])
-
 
 ## Barplot
 status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = status)) + 
@@ -294,6 +261,7 @@ status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = s
   theme() +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(0, max(status_by_year$count + 500))) +
+  
   scale_fill_brewer(palette = "Set3") + 
   labs( title = "Number of farms per status over the years", size = 15,
         y = "Number of farms",
@@ -306,7 +274,7 @@ status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = s
         axis.text.y = element_text(size=10,
                                    color = "black")) +
   guides(fill=guide_legend(title="Status"))
-  
+
 
 #Fazer gráfico interativo
 ggplotly(status_by_year_graph, tooltip = "text") %>% 
@@ -337,12 +305,9 @@ farms_production_status <- farms_production_status %>%
 
 names(farms_production_status) <- c("status", "year", "production", "count")
 
-
-
 ### Year as Date
-farms_production_status$year <- as.Date(farms_production_status$year), format = "%Y")
+farms_production_status$year <- as.Date(farms_production_status$year, format = "%Y")
 farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
-
 
 ### Chane to english
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Centro de Colheita de sémen", "Semen Collection Center")
@@ -357,31 +322,32 @@ farms_production_status$production <- replace(farms_production_status$production
 ## Stacked bar plot
 farms_production_graph <- ggplot(farms_production_status, aes(fill = production, y = count, x = status)) +
   geom_bar(position = "stack", stat = "identity", aes(text = paste0(production, " - ", count, " ", "farms"))) + 
-  scale_fill_brewer(palette = "Accent") +
+  facet_wrap(~year) + 
   theme_pubclean() + 
   theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + 
   ggtitle("Number of farms by type of production in each status over the years") + 
-  facet_wrap(~year) + 
+  scale_fill_brewer(palette = "Accent") +
   labs(y = " ",
        x = " ", 
        caption = "Fonte: DGAV",
        fill = " ")
 
 ggplotly(farms_production_graph, tooltip = "text") %>%
-  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 20),
                                       "Number of farms",
-                                      rep("&nbsp;", 30),
+                                      rep("&nbsp;", 20),
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-## Line chart for each status
-### A1 ggplot
+# Line chart for each status
+## A1 ggplot
 a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
 
 a1_graph <- ggplot(a1, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme() + 
@@ -399,11 +365,12 @@ ggplotly(a1_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A2 ggplot
+## A2 ggplot
 a2 <- farms_production_status %>% filter(farms_production_status$status == "A2")
 
 a2_graph <- ggplot(a2, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
@@ -422,11 +389,13 @@ ggplotly(a2_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A2A ggplot
+
+## A2A ggplot
 a2a <- farms_production_status %>% filter(farms_production_status$status == "A2A")
 
 a2a_graph <- ggplot(a2a, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
@@ -445,12 +414,13 @@ ggplotly(a2a_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A2NA ggplot
+## A2NA ggplot
 a2na <- farms_production_status %>% filter(farms_production_status$status == "A2NA")
 
 a2na_graph <- ggplot(a2na, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
   theme(legend.position = "bottom") + 
@@ -468,11 +438,13 @@ ggplotly(a2na_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A3 ggplot
+
+## A3 ggplot
 a3 <- farms_production_status %>% filter(farms_production_status$status == "A3")
 
 a3_graph <- ggplot(a3, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
@@ -491,11 +463,12 @@ ggplotly(a3_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A4 ggplot
+## A4 ggplot
 a4 <- farms_production_status %>% filter(farms_production_status$status == "A4")
 
 a4_graph <- ggplot(a4, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
@@ -514,11 +487,12 @@ ggplotly(a4_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
-### A5 ggplot
+## A5 ggplot
 a5 <- farms_production_status %>% filter(farms_production_status$status == "A5")
 
 a5_graph <- ggplot(a5, aes(color = production, group = production, y = count, x = year)) +
   geom_line(size = 1) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
   theme_pubclean() + 
@@ -536,6 +510,11 @@ ggplotly(a5_graph, tooltip = "text") %>%
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")),
          legend = list(x = 1, y = 0))
+
+
+
+
+
 
 
 ## Percentage of farms by status
@@ -574,6 +553,10 @@ ggplotly(status_percent_graph, tooltip = "text") %>%
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")),
          legend = list(x = 1, y = 0))
+
+
+
+
 
 
 # 3. Abates
@@ -648,8 +631,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
           stroke_width = "stroke",
           tooltip = "info",
           palette = "viridis")
-            
-          
+
+
 
 ##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 ##Geom_line para avaliar o nº abates ao longo do tempo (mensal) // DSAVR ou SVL
@@ -698,7 +681,69 @@ ggplotly(month_graph, tooltip = "text") %>%
 ##Evolução do nº de resultados positivos / nº animais amostrados ao longo do tempo (geom_line);
 
 
-# 5. Vacinações
+
+
+
+
+
+
+
+
+# 5. Vaccination
+## Number of vaccinated animals per production class by year
+### Select rows of interest
+vaccination_data <- vacinacoes %>% 
+  filter(vacinacoes$estado == "CONCLUIDO") %>%
+  select(data, exploracao, classe_controlo, vacinados_classe) %>%
+  arrange(data, exploracao)
+
+colnames(vaccination_data)[2] <- "exploracao_id"
+
+### Only with results between 2016 and 2020
+vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01-01" & vaccination_data$data < "2020-12-31")
+
+### Add column with year
+vaccination_data$year <- format(as.Date(vaccination_data$data, format="%d/%m/%Y"),"%Y")
+
+## Add status column to our data
+vaccination_status <- merge(x = vaccination_data, y = status, by = "exploracao_id", all.x = TRUE)
+
+vaccination_production_status <- vaccination_status %>% 
+  select(data.x, exploracao_id, classe_controlo, vacinados_classe, classificacao_sanitaria, year) %>%
+  arrange(data.x, exploracao_id)
+
+### Group by status, year and production classes
+vaccinaction_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$data.x, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
+names(vaccinaction_production_year) <- c("year", "production", "count")
+
+### Chane to english
+vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Engorda", "Fattening")
+vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Reprodutores", "Breeding")
+vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Substituição", "Replacement")
+
+
+## Stacked bar plot
+vaccination_production_graph <- ggplot(vaccinaction_production_year, aes(fill = production, y = count, x = status)) +
+  geom_bar(position = "stack", stat = "identity", aes(text = paste0(production, " - ", count, " ", "farms"))) + 
+  facet_wrap(~year) + 
+  theme_pubclean() + 
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("Number of farms by type of production in each status over the years") + 
+  scale_fill_brewer(palette = "Accent") +
+  labs(y = " ",
+       x = " ", 
+       caption = "Fonte: DGAV",
+       fill = " ")
+
+ggplotly(farms_production_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 20),
+                                      "Number of farms",
+                                      rep("&nbsp;", 20),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
+
+
 ##Avaliar nº vacinados nos diferentes anos por classe (small multiple geom bar, 1 para cada ano, cada barra para a classe)
 ##Nº vacinados por SVL (mapa)
 ##Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
