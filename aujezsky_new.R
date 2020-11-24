@@ -262,20 +262,21 @@ status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = 
         axis.title.x = element_text(size = 12),
         axis.text.x = element_text(size=8, 
                                    color = "black"),
-        axis.text.y = element_text(size=10,
+        axis.text.y = element_text(size=8,
                                    color = "black")) +
   guides(fill=guide_legend(title="Status"))
   
 
 #Fazer gráfico interativo
 ggplotly(status_by_year_graph, tooltip = "text") %>% 
-  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 20),
                                        "Number of farms",
-                                       rep("&nbsp;", 30),
+                                       rep("&nbsp;", 20),
                                        rep("\n&nbsp;", 2)),
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
+### Não deviamos ver a proporção para comparar entre anos??? nº A4/total, A3/total exploracoes, etc, por ano.
 
 ## Number of farms by type of production and by status in each year
 
@@ -307,8 +308,8 @@ names(farms_production_status) <- c("status", "year", "production", "count")
 farms_production_status$year <- as.Date(farms_production_status$year, format = "%Y")
 farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
 
-farms_production_status$year <- as.Date(farms_production_status$year), format = "%Y")
-farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
+farms_production_status <- as.Date((farms_production_status$year), format = "%Y")
+farms_production_status <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
 
 
 ## Stacked bar plot
