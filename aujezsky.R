@@ -556,10 +556,7 @@ ggplotly(status_percent_graph, tooltip = "text") %>%
 
 
 
-
-
-
-# 3. Abates
+# 3. Slaughters
 # 3.1 Number of animals slaughtered by farm in 2019
 ## Table with animals slaughtered by farm in 2019
 ### Change date format
@@ -622,7 +619,7 @@ itineraries_2019$info <- paste0(itineraries_2019$exploracao, " to ", itineraries
 
 ## Map with itineraries by frequency in 2019
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
-  add_arc(data = itineraries_2019, 
+  add_animated_arc(data = itineraries_2019, 
           layer_id = "arc_layer",
           origin = c("long_exploracao", "lat_exploracao"),
           destination = c("long_matadouro", "lat_matadouro"),
@@ -632,10 +629,6 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
           tooltip = "info",
           palette = "viridis")
 
-
-
-##Mapa com nº abates de 2019 por exploração e/ou por SVL;
-##Geom_line para avaliar o nº abates ao longo do tempo (mensal) // DSAVR ou SVL
 
 # 3.3 Geomline with the number of animals slaughtered over the year of 2019
 ## Table with number of animals slaughtered by month in 2019
@@ -667,6 +660,7 @@ month_graph <- ggplot(slaughter_2019_month, aes(x = month, y = count, color = m)
        color = " ") + 
   scale_x_continuous(breaks = seq(1,12, by = 1))
 
+## Mapa interativo
 ggplotly(month_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of animals slaughtered",
@@ -675,6 +669,41 @@ ggplotly(month_graph, tooltip = "text") %>%
                                     collapse = "")))
 
 
+# 3.4 Animals slaughtered by FVRD in 2019
+## Table with animals slaughtered in each FVRD in 2019
+slaughter_dsavr <- merge(slaughter_2019, exploracoes, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+
+### Remove farrms without FVRD info
+slaughter_dsavr <- slaughter_dsavr %>% filter(dsavr != "NA")
+slaughter_dsavr <- slaughter_dsavr %>% select(exploracao, data_de_entrada, long_exploracao, lat_exploracao, confirmados, svl, dsavr)
+
+slaughter_dsavr <- as.data.frame(aggregate(slaughter_dsavr$confirmados, by = list(slaughter_dsavr$dsavr), FUN = sum))
+names(slaughter_dsavr) <- c("dsavr", "count")
+slaughter_dsavr$count <- as.numeric(slaughter_dsavr$count)
+
+
+## Plot with number of animals slaughtered by FVRD
+dsavr_graph <- ggplot(slaughter_dsavr, aes(x = dsavr, y = count, color = dsavr)) + 
+  theme_light() + 
+  theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0.5)) + 
+  geom_point(size = 5, aes(text = paste0(dsavr, "<br>", count, " animals slaughtered")), show.legend = TRUE) + 
+  geom_segment(aes(x = dsavr, xend = dsavr,  y = 0, yend = count), linetype = "dotted", color = "black") +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "Number of animals slaughtered in each \n Food and Veterinary Regional Directorate during 2019",
+       x = " ", 
+       y = " ", 
+       color = " ") +
+  scale_y_continuous(breaks = seq(0, 1150000, by = 150000), limits = c(0, 1150000))
+  
+## Mapa interativo
+ggplotly(dsavr_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of animals slaughtered",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
+
+##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 
 # 4. Ensaios Laboratoriais
 ##Avaliar nº positivos a DA / total de animais amostrados por SVL ou por laboratório;
