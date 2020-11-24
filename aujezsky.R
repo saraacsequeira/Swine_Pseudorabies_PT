@@ -81,7 +81,7 @@ count <- na.omit(count)
 
 ### Define categories based on total animals
 count$categoria <- cut(count$total, c(0,50,100,250,500,750,1000,2500,5000,10000,25000,50000))
-levels(count$categoria) <- c("0;50", "50;100", "100;250", "250;500", "500;750", "750;1000", "1000;2500", "2500;5000", "5000;10000", "10000;25000", "25000;50000")
+levels(count$categoria) <- c("0:50", "50:100", "100:250", "250:500", "500:750", "750:1000", "1000:2500", "2500:5000", "5000:10000", "10000:25000", "25000:50000")
 
 
 ### Mapdeck
@@ -98,12 +98,6 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   palette = "inferno")
 
 
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> main
 # 1.2.1 - Number of animals by LVS
 ## Table with total of animals by LVS
 count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
@@ -136,11 +130,6 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
                                        rep("\n&nbsp;", 2)),
                                      collapse = "")),
          legend = list(x = 1, y = 0))
-
-
-
-
-
 
 
 
@@ -180,14 +169,6 @@ ggplotly(count_svl_graph, tooltip = "text") %>%
 
 
 
-
-
-
-
-
-
-
-
 # 1.3 Percentage of pig farms currently classified (in general and farm specified)
 ## Selecting specific columns
 class <- as.data.frame(merge(contagens, classificacoes, by.x = "exploracao", by.y = "exploracao_id")) %>% 
@@ -202,25 +183,16 @@ class_last <- class %>%
   arrange(data.y, exploracao) %>% 
   group_by(exploracao) %>% 
   summarise_all(last)
-<<<<<<< HEAD
 
 ## Clean the wrong data formats
 class_last <- class_last %>%
   filter(class_last$data.y < as.Date("2105-11-10"))
 
-=======
-
-## Clean the wrong data formats
-class_last <- class_last %>%
-  filter(class_last$data.y < as.Date("2105-11-10"))
-
->>>>>>> main
 ## Classification percentage for each SVL (in 2020)
 ### Give each row a number
 classification_count <- class %>%
   mutate(count = 1)
 
-<<<<<<< HEAD
 ## Map with the last classification for each farm
 ### Add label
 class_last$info1 <- paste0(class_last$exploracao, "<br>", class_last$svl, "<br>", class_last$classificacao_sanitaria, " ", "(2020)", "<br>")
@@ -229,8 +201,8 @@ mapdeck(token = token, style = mapdeck_style("light"), pitch = 20) %>%
   add_scatterplot(data = class_last, 
                   lat = "latitude", 
                   lon = "longitude",
-                  radius = 200,
-=======
+                  radius = 200
+
 ## Add the numer of animals by farm
 ### Merge tables
 class_last <- merge(class_last, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
@@ -250,17 +222,13 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   lat = "latitude", 
                   lon = "longitude",
                   radius = 500,
->>>>>>> main
                   fill_colour = "classificacao_sanitaria",
                   legend = TRUE, 
                   tooltip = "info1",
                   layer_id = "point",
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
-<<<<<<< HEAD
-                  palette = "viridis")
-=======
                   palette = "spectral")
->>>>>>> main
+
 
 ## Map - percentage of status by SVL (in 2020) ??????
 
@@ -288,22 +256,17 @@ status <- unique(status)
 ### Add column with year
 status$year <- format(as.Date(status$data, format="%d/%m/%Y"),"%Y")
 
-<<<<<<< HEAD
-########## SARA
-=======
->>>>>>> main
 ### Give each row a number
 status <- status %>%
   mutate(count = 1)
 
 ### Find the number of farms for each status
-<<<<<<< HEAD
 status_by_year2 <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
 names(status_by_year2) <- c("year", "status", "count")
 
 ## Remove A0 and SC status
 status_by_year2 <- as.data.frame(status_by_year2[!status_by_year2$status == "A0" & !status_by_year2$status == "SC",])
-############### SARA
+
 
 ## Barplot
 status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = status)) + 
@@ -314,7 +277,7 @@ status_by_year_graph <- ggplot(status_by_year2, aes(x = year, y = count, fill = 
   theme() +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(0, max(status_by_year2$count + 500))) +
-=======
+
 status_by_year <- as.data.frame(aggregate(status$count, by = list(status$year, status$classificacao_sanitaria), FUN = sum))
 names(status_by_year) <- c("year", "status", "count")
 
@@ -331,8 +294,6 @@ status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = s
   theme() +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(0, max(status_by_year$count + 500))) +
->>>>>>> main
-  
   scale_fill_brewer(palette = "Set3") + 
   labs( title = "Number of farms per status over the years", size = 15,
         y = "Number of farms",
@@ -358,11 +319,6 @@ ggplotly(status_by_year_graph, tooltip = "text") %>%
 
 
 ## Number of farms by type of production and by status in each year
-<<<<<<< HEAD
-
-############ SARA
-=======
->>>>>>> main
 ### Remove A0 and SC status
 status <- as.data.frame(status[!status$classificacao_sanitaria == "A0" & !status$classificacao_sanitaria == "SC",])
 
@@ -380,24 +336,14 @@ farms_production_status <- farms_production_status %>%
   arrange(Group.1, Group.3, Group.2)
 
 names(farms_production_status) <- c("status", "year", "production", "count")
-<<<<<<< HEAD
-############# SARA
 
 
-
-
-=======
->>>>>>> main
 
 ### Year as Date
-farms_production_status$year <- as.Date(farms_production_status$year, format = "%Y")
-farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
-
-<<<<<<< HEAD
 farms_production_status$year <- as.Date(farms_production_status$year), format = "%Y")
 farms_production_status$year <- format(as.Date(farms_production_status$year, format = "%Y-%m-%d"), "%Y")
 
-=======
+
 ### Chane to english
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Centro de Colheita de sémen", "Semen Collection Center")
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Montanheira", "Mountain")
@@ -407,7 +353,6 @@ farms_production_status$production <- replace(farms_production_status$production
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Quarentena", "Quarentine")
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Recria e/ou acabamento", "Rearing and/or Finisher")
 farms_production_status$production <- replace(farms_production_status$production, farms_production_status$production == "Seleção e/ou multiplicação", "Selection and/or Breeding")
->>>>>>> main
 
 ## Stacked bar plot
 farms_production_graph <- ggplot(farms_production_status, aes(fill = production, y = count, x = status)) +
