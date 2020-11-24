@@ -620,6 +620,44 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 ##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 ##Geom_line para avaliar o nº abates ao longo do tempo (mensal) // DSAVR ou SVL
 
+# 3.3 Geomline with the number of animals slaughtered over the year of 2019
+## Table with number of animals slaughtered by month in 2019
+slaughter_2019_month <- slaughter_2019 %>% select(id, data_de_entrada, exploracao, confirmados)
+slaughter_2019_month <- unique(slaughter_2019_month)
+
+### Add column with the month
+slaughter_2019_month$month <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
+slaughter_2019_month$m <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
+slaughter_2019_month$month <- format(as.Date(slaughter_2019_month$month, format = "%Y-%m-%d"), "%m")
+slaughter_2019_month$m <- format(as.Date(slaughter_2019_month$m, format = "%Y-%m-%d"), "%B")
+
+### Number of animals slaughtered by month
+slaughter_2019_month <- aggregate(slaughter_2019_month$confirmados, by = list(slaughter_2019_month$month, slaughter_2019_month$m), FUN = sum)
+names(slaughter_2019_month) <- c("month", "m", "count")
+slaughter_2019_month$count <- as.numeric(slaughter_2019_month$count)
+slaughter_2019_month$month <- as.numeric(slaughter_2019_month$month)
+
+## Geomline 
+month_graph <- ggplot(slaughter_2019_month, aes(x = month, y = count, color = m)) +
+  geom_line(size = 0.5, color = "gray60") + 
+  geom_point(size = 2, aes(text = paste0(m, " - ", count, " animals slaughtered"))) + 
+  scale_color_brewer(palette = "Paired") + 
+  theme_light() + 
+  theme() + 
+  ggtitle("Animals slaughtered over the year of 2019") + 
+  labs(y = "Number of animals slaughtered",
+       x = "Month", 
+       color = " ") + 
+  scale_x_continuous(breaks = seq(1,12, by = 1))
+
+ggplotly(month_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of animals slaughtered",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
+
+
 
 # 4. Ensaios Laboratoriais
 ##Avaliar nº positivos a DA / total de animais amostrados por SVL ou por laboratório;
