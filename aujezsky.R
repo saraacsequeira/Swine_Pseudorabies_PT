@@ -123,7 +123,7 @@ count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = 
         x = "Local Veterinary Service", 
         caption = "Fonte: DGAV")
 
-## Mapa interativo
+## Interactive Graph
 ggplotly(count_svl_total_graph, tooltip = "text") %>% 
   layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
                                        "Local Veterinary Service",
@@ -783,52 +783,79 @@ colnames(vaccination_data)[2] <- "exploracao_id"
 ### Only with results between 2016 and 2020
 vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01-01" & vaccination_data$data < "2020-12-31")
 
-### Add column with year
-vaccination_data$year <- format(as.Date(vaccination_data$data, format="%d/%m/%Y"),"%Y")
-
 ## Add status column to our data
 vaccination_status <- merge(x = vaccination_data, y = status, by = "exploracao_id", all.x = TRUE)
 
 vaccination_production_status <- vaccination_status %>% 
-  select(data.x, exploracao_id, classe_controlo, vacinados_classe, classificacao_sanitaria, year) %>%
-  arrange(data.x, exploracao_id)
+  select(classificacao_sanitaria, year, exploracao_id, classe_controlo, vacinados_classe) %>%
+  arrange(year, exploracao_id)
+
 
 ### Group by status, year and production classes
-vaccinaction_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$data.x, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
-names(vaccinaction_production_year) <- c("year", "production", "count")
+vaccination_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$classificacao_sanitaria, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
+names(vaccination_production_year) <- c("status", "year", "production", "count")
+
+### Remove A0 and SC status
+vaccination_production_year <- as.data.frame(vaccinaction_production_year[!vaccinaction_production_year$status == "A0" & !vaccinaction_production_year$status == "SC",])
+
+### Count as numeric
+vaccination_production_year$count <- as.numeric(vaccinaction_production_year$count)
 
 ### Chane to english
-vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Engorda", "Fattening")
-vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Reprodutores", "Breeding")
-vaccinaction_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Substituição", "Replacement")
+vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Engorda", "Fattening")
+vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Reprodutores", "Breeding")
+vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Substituição", "Replacement")
 
+### Year as Date
+vaccination_production_year$year <- as.Date(vaccinaction_production_year$year, format = "%Y")
+vaccination_production_year$year <- format(as.Date(vaccinaction_production_year$year, format = "%Y-%m-%d"), "%Y")
+
+### Remove NA values
+vaccination_production_year <- na.omit(vaccinaction_production_year)
+
+### Prepare for graph
+vaccinaction_production_year <- vaccinaction_production_year %>% 
+  arrange(year, status, production)
 
 ## Stacked bar plot
-vaccination_production_graph <- ggplot(vaccinaction_production_year, aes(fill = production, y = count, x = status)) +
-  geom_bar(position = "stack", stat = "identity", aes(text = paste0(production, " - ", count, " ", "farms"))) + 
-  facet_wrap(~year) + 
-  theme_pubclean() + 
-  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Number of farms by type of production in each status over the years") + 
+vaccination_graph <- ggplot(vaccinaction_production_year, aes(x = status, y = count, fill = production)) + 
+  geom_bar(stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
+  facet_wrap(~year) +
+  coord_flip() + 
+  theme_bw() +
+  labs( title = "Number of animals vaccinated by production type in each status over the years", size = 20,
+        y = "Number of animals",
+        x = "", 
+        caption = "Fonte: DGAV") +
   scale_fill_brewer(palette = "Accent") +
-  labs(y = " ",
-       x = " ", 
-       caption = "Fonte: DGAV",
-       fill = " ")
+  theme(legend.title = element_blank(),
+        axis.title.x = element_text(size = 12),
+        axis.text.x = element_text(size=8, 
+                                   color = "black"),
+        axis.text.y = element_text(size=10,
+                                   color = "black")) +
+  guides(fill=guide_legend(title="status"))
 
-ggplotly(farms_production_graph, tooltip = "text") %>%
-  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 20),
-                                      "Number of farms",
-                                      rep("&nbsp;", 20),
-                                      rep("\n&nbsp;", 2)),
-                                    collapse = "")),
+## Interactive Graph
+ggplotly(vaccination_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 15),
+                                       "Number of Animals",
+                                       rep("&nbsp;", 15),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
          legend = list(x = 1, y = 0))
+      ## tentar resolver a apresentação de texto do eixo x e cores na mesma ordem
 
 
-##Avaliar nº vacinados nos diferentes anos por classe (small multiple geom bar, 1 para cada ano, cada barra para a classe)
-##Nº vacinados por SVL (mapa)
-##Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
-##Verificação de cumprimento de prazos, intervalo entre vacinações. Se está de acordo com o estipulado para cada classificação sanitária e/ou classe (pie chart)
+
+## Vaccinated animals by LVS (mapa)
+
+## Percentage of vaccinated animals by status in 2020
+### Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
+
+
+## See if vaccination intervals are accourdingly to the plan for each status/ production class (pie chart?)
+###Verificação de cumprimento de prazos. 
 
 
 
