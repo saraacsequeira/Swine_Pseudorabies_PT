@@ -356,7 +356,7 @@ a1_graph <- ggplot(a1, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A1 mapa interativo
+### A1 Interactive graph
 ggplotly(a1_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -380,7 +380,7 @@ a2_graph <- ggplot(a2, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A2 mapa interativo
+### A2 Interactive graph
 ggplotly(a2_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -405,7 +405,7 @@ a2a_graph <- ggplot(a2a, aes(color = production, group = production, y = count, 
        x = "Year",
        color = " ")
 
-### A2A mapa interativo
+### A2A Interactive graph
 ggplotly(a2a_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -429,7 +429,7 @@ a2na_graph <- ggplot(a2na, aes(color = production, group = production, y = count
        x = "Year",
        color = " ")
 
-### A2NA mapa interativo
+### A2NA Interactive graph
 ggplotly(a2na_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -454,7 +454,7 @@ a3_graph <- ggplot(a3, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A3 mapa interativo
+### A3 Interactive graph
 ggplotly(a3_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -478,7 +478,7 @@ a4_graph <- ggplot(a4, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A4 mapa interativo
+### A4 Interactive graph
 ggplotly(a4_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -502,7 +502,7 @@ a5_graph <- ggplot(a5, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A5 mapa interativo
+### A5 Interactive graph
 ggplotly(a5_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -545,7 +545,7 @@ status_percent_graph <- ggplot(status_percentage, aes(x = status, y = percentage
        color = " ",
        x = "Status") 
 
-## Mapa interativo
+## Interactive graph
 ggplotly(status_percent_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Percentage (%)",
@@ -660,7 +660,7 @@ month_graph <- ggplot(slaughter_2019_month, aes(x = month, y = count, color = m)
        color = " ") + 
   scale_x_continuous(breaks = seq(1,12, by = 1))
 
-## Mapa interativo
+## Interactive graph
 ggplotly(month_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of animals slaughtered",
@@ -695,7 +695,7 @@ dsavr_graph <- ggplot(slaughter_dsavr, aes(x = dsavr, y = count, color = dsavr))
        color = " ") +
   scale_y_continuous(breaks = seq(0, 1150000, by = 150000), limits = c(0, 1150000))
   
-## Mapa interativo
+## Interactive graph
 ggplotly(dsavr_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of animals slaughtered",
@@ -747,7 +747,7 @@ mean_slaughter_graph <- ggplot(mean_slaughter, aes(x = month, y = mean, color = 
        color = " ") + 
   scale_x_continuous(breaks = seq(1,12, by = 1))
 
-## Mapa interativo
+## Interactive graph
 ggplotly(mean_slaughter_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Mean of daily slaughters",
