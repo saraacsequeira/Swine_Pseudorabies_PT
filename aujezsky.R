@@ -705,6 +705,58 @@ ggplotly(dsavr_graph, tooltip = "text") %>%
 
 ##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 
+# 3.5 Mean of daily slaughters in each month between 2016 and 2020
+## Table with mean of daily slaughters in each month between 2016 and 2020
+### Filter by date
+mean_slaughter <- animais_abatidos %>% filter(data_de_entrada >= "2016-01-01" & data_de_entrada <= "2020-12-31")
+
+### Aggregate by day
+mean_slaughter <- as.data.frame(aggregate(mean_slaughter$confirmados, by = list(mean_slaughter$data_de_entrada), FUN = sum))
+names(mean_slaughter) <- c("data_de_entrada", "count")
+
+### Add column with year and month
+mean_slaughter$month <- as.Date(mean_slaughter$data_de_entrada, format = "%m")
+mean_slaughter$month <- format(as.Date(mean_slaughter$month, format = "%Y-%m-%d"), "%m")
+mean_slaughter$year <- as.Date(mean_slaughter$data_de_entrada, format = "%Y")
+mean_slaughter$year <- format(as.Date(mean_slaughter$year, format = "%Y-%m-%d"), "%Y")
+
+### Confirmed, year and  month as numeric
+mean_slaughter$count <- as.numeric(mean_slaughter$count)
+mean_slaughter$month <- as.numeric(mean_slaughter$month)
+mean_slaughter$year <- as.factor(mean_slaughter$year)
+
+### Mean of daily slaughters in each month
+mean_slaughter <- aggregate(mean_slaughter$count, by = list(mean_slaughter$month, mean_slaughter$year), FUN = mean)
+names(mean_slaughter) <- c("month", "year", "mean")
+mean_slaughter$mean <- round(mean_slaughter$mean, digits = 1)
+
+### Add column with written month
+mean_slaughter$m <- mean_slaughter$month
+mean_slaughter$m[mean_slaughter$m == c("1","2","3","4","5","6","7","8","9","10","11","12")] <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+## Geomline with evolution
+mean_slaughter_graph <- ggplot(mean_slaughter, aes(x = month, y = mean, color = year)) + 
+  geom_line(size = 0.7) + 
+  geom_point(size = 1.5, aes(text = paste0(year, "/", m, " - ", "mean of ", mean, " animals slaughtered"))) +
+  scale_color_brewer(palette = "Dark2") + 
+  theme_light() + 
+  theme() + 
+  ggtitle("Mean of daily slaughters in each month between 2016 and 2020") + 
+  labs(y = "Number of animals slaughtered",
+       x = "Month", 
+       color = " ") + 
+  scale_x_continuous(breaks = seq(1,12, by = 1))
+
+## Mapa interativo
+ggplotly(mean_slaughter_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Mean of daily slaughters",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
+
+
+
 # 4. Ensaios Laboratoriais
 ##Avaliar nº positivos a DA / total de animais amostrados por SVL ou por laboratório;
 ##Evolução do nº de resultados positivos / nº animais amostrados ao longo do tempo (geom_line);
