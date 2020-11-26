@@ -40,6 +40,7 @@ cont_map <- read_sf(temp_dir)
 cont_geo <- st_as_sf(cont_map, 4326)
 cont_geo <- st_transform(cont_geo, "+proj=longlat +datum=WGS84")
 
+### View map
 ggplot(cont_geo) + geom_sf()
 
 ## Add column with area
@@ -73,6 +74,7 @@ ggplot(cont_geo_fvrd) + geom_sf()
 st_write(cont_geo_fvrd, dsn = "continent_dsavr_map", driver = "ESRI Shapefile")
 st_write(cont_geo_lvs, dsn = "continent_svl_map", driver = "ESRI Shapefile")
 
+###### FAZER TERMINATE R ########
 
 # MADEIRA MAP
 temp_dir <- tempdir()
@@ -87,6 +89,7 @@ mad_map <- read_sf(temp_dir)
 mad_geo <- st_as_sf(mad_map, 4326)
 mad_geo <- st_transform(mad_geo, "+proj=longlat +datum=WGS84")
 
+### View map
 ggplot(mad_geo) + geom_sf()
 
 ## Add column with area
@@ -120,3 +123,52 @@ ggplot(mad_geo_fvrd) + geom_sf()
 st_write(mad_geo_fvrd, dsn = "madeira_dsavr_map", driver = "ESRI Shapefile")
 st_write(mad_geo_lvs, dsn = "madeira_svl_map", driver = "ESRI Shapefile")
 
+
+###### FAZER TERMINATE R ########
+
+# EASTERN AZORES MAP
+temp_dir <- tempdir()
+temp <- tempfile(tmpdir = temp_dir, fileext = ".zip")
+download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOriental_AAd_CAOP2019.zip", destfile = temp)
+unzip(temp, exdir = temp_dir)
+
+## Table
+aze_map <- read_sf(temp_dir)
+
+## Convert SRS to WGS84
+aze_geo <- st_as_sf(aze_map, 4326)
+aze_geo <- st_transform(aze_geo, "+proj=longlat +datum=WGS84")
+
+### View map
+ggplot(aze_geo) + geom_sf()
+
+## Add column with area
+aze_geo$area <- st_area(aze_geo)
+
+## Remove last 2 digits from DICOFRE
+aze_geo$DICOFRE <- substr(aze_geo$DICOFRE, 1, nchar(aze_geo$DICOFRE) - 2)
+
+## Merge with concelho's table
+aze_geo_concelhos <- merge(aze_geo, concelhos, by.x = "DICOFRE", by.y = "dicofre", all.x = TRUE, all.y = FALSE)
+
+## Aggregate by LVS
+aze_geo_lvs <- aze_geo_concelhos %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
+
+### View map
+ggplot(aze_geo_lvs) + geom_sf()
+
+
+## Aggregate by FVRD
+aze_geo_fvrd <- aze_geo_concelhos %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
+### View geo 
+ggplot(aze_geo_fvrd) + geom_sf()
+
+
+## Export as SHP files
+st_write(aze_geo_fvrd, dsn = "east_azores_dsavr_map", driver = "ESRI Shapefile")
+st_write(aze_geo_lvs, dsn = "east_azores_svl_map", driver = "ESRI Shapefile")
