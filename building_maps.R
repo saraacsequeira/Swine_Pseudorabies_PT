@@ -7,6 +7,7 @@ library(dplyr)
 library(data.table)
 library(DBI)
 library(RMySQL)
+library(lwgeom)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -30,66 +31,48 @@ continente <- concelhos %>% filter(svl != "DRADR AÇORES" & svl != "DRADR MADEIR
 ilhas <- concelhos %>% filter(svl == "DRADR AÇORES" | svl == "DRADR MADEIRA")
 
 
-# Download continent and islands maps with different freguesias
-## Continent map
-tmp_dir_c <- tempdir()
-tmp_c <- tempfile(tmpdir = tmp_dir_c, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-Cont/Cont_AAD_CAOP2019.zip", destfile = tmp_c)
-unzip(tmp_c, exdir = tmp_dir_c)
+# Download continent map with different freguesias (https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop)
+temp_dir <- tempdir()
+temp <- tempfile(tmpdir = temp_dir, fileext = ".zip")
+download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-Cont/Cont_AAD_CAOP2019.zip", destfile = temp)
+unzip(temp, exdir = temp_dir)
 
-### Table
-cont_map <- read_sf(tmp_dir_c)
-ggplot(cont_map) + geom_sf()
+## Table
+cont_map <- read_sf(temp_dir)
 
+## Convert SRS to WGS84
+cont_geo <- st_as_sf(cont_map, 4326)
+cont_geo <- st_transform(cont_geo, "+proj=longlat +datum=WGS84")
 
-## Madeira map
-tmp_dir_m <- tempdir()
-tmp_m <- tempfile(tmpdir = tmp_dir_m, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAM/ArqMadeira_AAD_CAOP2019.zip", destfile = tmp_m)
-unzip(tmp_m, exdir = tmp_dir_m)
+ggplot(cont_geo) + geom_sf()
 
-### Table
-mad_map <- read_sf(tmp_dir_m)
-ggplot(mad_map) + geom_sf()
+## Add column with area
+cont_geo$area <- st_area(cont_geo)
 
+## Remove last 2 digits from DICOFRE
+cont_geo$Dicofre <- substr(cont_geo$Dicofre, 1, nchar(cont_geo$Dicofre) - 2)
 
-## Azores map
-### Western group
-tmp_dir_azw <- tempdir()
-tmp_azw <- tempfile(tmpdir = tmp_dir_azw, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOcidental_AAd_CAOP2019.zip", destfile = tmp_azw)
-unzip(tmp_azw, exdir = tmp_dir_azw)
+## Merge with concelho's table
+cont_geo_concelhos <- merge(cont_geo, concelhos, by.x = "Dicofre", by.y = "dicofre", all = TRUE)
 
-### Table
-azw_map <- read_sf(tmp_dir_azw)
+## Aggregate by LVS
+cont_geo_lvs <- cont_geo_concelhos %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
 
-### Eastern group
-tmp_dir_aze <- tempdir()
-tmp_aze <- tempfile(tmpdir = tmp_dir_aze, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOriental_AAd_CAOP2019.zip", destfile = tmp_aze)
-unzip(tmp_aze, exdir = tmp_dir_aze)
-
-### Table
-aze_map <- read_sf(tmp_dir_aze)
-
-### Central group
-tmp_dir_azc <- tempdir()
-tmp_azc <- tempfile(tmpdir = tmp_dir_azc, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GCentral_AAd_CAOP2019.zip", destfile = tmp_azc)
-unzip(tmp_azc, exdir = tmp_dir_azc)
-
-### Table
-azc_map <- read_sf(tmp_dir_azc)
-
-## Gather Azores tables in one
-azores_map <- rbind(azc_map, aze_map, azw_map)
+### View map
+ggplot(cont_geo_lvs) + geom_sf()
 
 
-# Gather Azores and Madeira tables
-isl_map <- rbind(azores_map, mad_map)
+## Agregate by FVRD
+cont_geo_fvrd <- cont_geo_concelhos %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
+### View geo 
+ggplot(cont_geo_fvrd) + geom_sf()
 
 
-
-
-
-
+## Export as SHP files
+st_write(cont_geo_fvrd, dsn = "continent_dsavr_map", driver = "ESRI Shapefile")
+st_write(cont_geo_lvs, dsn = "continent_svl_map", driver = "ESRI Shapefile")
