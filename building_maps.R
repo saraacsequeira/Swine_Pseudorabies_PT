@@ -28,8 +28,6 @@ concelhos <- freguesias %>% select(dicofre, concelho, svl, dsavr)
 concelhos$dicofre <- substr(concelhos$dicofre, 1, nchar(concelhos$dicofre) - 2)
 concelhos <- unique(concelhos)
 
-## Replace 4201 DICOFRE LVS  and FVRD - IMPORTANTEEEEEE!!!!
-concelhos$svl[1164] <- replace(concelhos$svl[1164], concelhos$svl[1164] == "DSAVR Algarve", "DRADR AÇORES")
 
 # CONTINENT MAP (https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop)
 temp_dir <- tempdir()
@@ -163,8 +161,13 @@ aze_geo_lvs <- aze_geo_concelhos %>%
   group_by(svl) %>%
   summarise(area = sum(area))
 
-## Remove row 2
-aze_geo_lvs <- aze_geo_lvs[-2, ]
+## Change LVS name
+aze_geo_lvs$svl <- replace(aze_geo_lvs$svl, aze_geo_lvs$svl == "DSAVR Algarve", "DRADR AÇORES")
+
+## Merge the 2 in one
+aze_geo_lvs <- aze_geo_lvs %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
 
 ### View map
 ggplot(aze_geo_lvs) + geom_sf()
@@ -175,8 +178,13 @@ aze_geo_fvrd <- aze_geo_concelhos %>%
   group_by(dsavr) %>%
   summarise(area = sum(area))
 
-## Remove row 2
-aze_geo_fvrd <- aze_geo_fvrd[-2, ]
+## Change FVRD name
+aze_geo_fvrd$dsavr <- replace(aze_geo_fvrd$dsavr, aze_geo_fvrd$dsavr == "DSAVR Algarve", "DRADR - R. A. AÇORES")
+
+## Merge the 2 in one
+aze_geo_fvrd <- aze_geo_fvrd %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
 
 ### View geo 
 ggplot(aze_geo_fvrd) + geom_sf()
