@@ -18,11 +18,9 @@ library(reshape2)
 library(mapdeck)
 library(colourvalues)
 library(scales)
-<<<<<<< HEAD
 library(rgdal)
-=======
 library(hrbrthemes)
->>>>>>> c2d044b353b9636e3405443a57c0f919683a144e
+
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -86,21 +84,42 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
 ## Map with animals' distribution by LVS
 
 ### Read map
-setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
 pt_lvs_map <- read_sf("pt_svl_map")
-pt_lvs_map <- na.omit(pt_lvs_map)
+
+### Azores all in one
+pt_lvs_map <- pt_lvs_map %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
 
 ### Merge map with count by LVS
-count_lvs_map <- merge(pt)
+count_lvs_map <- merge(count_svl_total, pt_lvs_map, by.x = "svl", by.y = "svl", all.x = TRUE, all.y = TRUE)
+
+### Add column with label
+count_lvs_map$info <- paste0(count_lvs_map$svl, "<br>", count_lvs_map$total, " animals")
+
+### Replace NA de Foz Côa com valor
+count_lvs_map$total[is.na(count_lvs_map$total)] <- 0
+
+### Total as numeric
+count_lvs_map$total <- as.numeric(count_lvs_map$total)
+
+### Define categories based on total animals
+count_lvs_map$categoria <- cut(count_lvs_map$total, c(0,10000,25000,50000,100000,200000,300000,400000,500000))
+levels(count_lvs_map$categoria) <- c("0;10000", "10000;25000", "25000;50000", "50000;100000", "100000;200000", "200000;300000", "300000;400000", "400000;500000")
+
+### Convert to sf
+count_lvs_map <- st_as_sf(count_lvs_map)
 
 
-
+## Mapdeck
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
-  add_polygon(data = pt_lvs_map,
+  add_polygon(data = count_lvs_map,
               layer_id = "polygon_layer", 
-              fill_colour = "svl")
-
-
+              fill_colour = "categoria",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
+              palette = "inferno")
 
 
 

@@ -15,6 +15,8 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
                         host = "localhost",
                         user = "root",
                         password = "projetoporcos")
+# Directory
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 
 # Read table from MYSQL
 freguesias <- dbReadTable(connection, "st_tabela_freguesias")
