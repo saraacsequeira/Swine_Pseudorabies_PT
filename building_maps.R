@@ -34,10 +34,10 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-Cont/Cont_AAD_CAO
 unzip(temp, exdir = temp_dir)
 
 ## Table
-cont_map <- read_sf(temp_dir)
+cont_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-cont_geo <- st_as_sf(cont_map, 4326)
+cont_geo <- st_as_sf(cont_geo, 4326)
 cont_geo <- st_transform(cont_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -87,7 +87,7 @@ unzip(temp, exdir = temp_dir)
 mad_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-mad_geo <- st_as_sf(mad_map, 4326)
+mad_geo <- st_as_sf(mad_geo, 4326)
 mad_geo <- st_transform(mad_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -137,7 +137,7 @@ unzip(temp, exdir = temp_dir)
 aze_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-aze_geo <- st_as_sf(aze_map, 4326)
+aze_geo <- st_as_sf(aze_geo, 4326)
 aze_geo <- st_transform(aze_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -186,7 +186,7 @@ unzip(temp, exdir = temp_dir)
 azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azc_geo <- st_as_sf(azc_map, 4326)
+azc_geo <- st_as_sf(azc_geo, 4326)
 azc_geo <- st_transform(azc_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -236,7 +236,7 @@ unzip(temp, exdir = temp_dir)
 azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azc_geo <- st_as_sf(azc_map, 4326)
+azc_geo <- st_as_sf(azc_geo, 4326)
 azc_geo <- st_transform(azc_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -286,7 +286,7 @@ unzip(temp, exdir = temp_dir)
 azw_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azw_geo <- st_as_sf(azw_map, 4326)
+azw_geo <- st_as_sf(azw_geo, 4326)
 azw_geo <- st_transform(azw_geo, "+proj=longlat +datum=WGS84")
 
 ### View map

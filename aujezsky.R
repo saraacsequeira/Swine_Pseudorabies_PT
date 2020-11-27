@@ -18,6 +18,7 @@ library(reshape2)
 library(mapdeck)
 library(colourvalues)
 library(scales)
+library(rgdal)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -44,9 +45,56 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 # 1 - PIG FARM'S DISTRIBUTION
 
-## 1.1 - Pig farm's distribution by LVS (local veterinary service) - HOW TO HAVE A LAYER WITH THAT?
+# 1.1 - Pig farm's distribution by LVS (local veterinary service) - HOW TO HAVE A LAYER WITH THAT?
+
+## Table with total of animals by LVS
+count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
+count_svl <- count_svl %>% arrange(Group.2, Group.1)
+names(count_svl) <- c("class", "svl", "count")
+
+count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
+names(count_svl_total) <- c("svl", "total")
+count_svl_total$total <- as.numeric(count_svl_total$total)
+
+### Remove scientific notation
+options(scipen=999)
+
+## Plot with total number of animals by LVS
+count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
+  geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
+  coord_flip() + 
+  theme_light() +
+  theme(legend.position = "none") +
+  labs( title = "Number of animals by LVS", size = 15,
+        y = "Number of animals",
+        x = "Local Veterinary Service", 
+        caption = "Fonte: DGAV")
+
+## Interactive Graph
+ggplotly(count_svl_total_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+                                       "Local Veterinary Service",
+                                       rep("&nbsp;", 30),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
+
+## Map with animals' distribution by LVS
+
+### Read map
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
+pt_lvs_map <- read_sf("pt_svl_map")
+pt_lvs_map <- na.omit(pt_lvs_map)
+
+### Merge map with count by LVS
+count_lvs_map <- merge(pt)
 
 
+
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = pt_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "svl")
 
 
 
@@ -99,41 +147,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 
 
 
-# 1.2.1 - Number of animals by LVS
-## Table with total of animals by LVS
-count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
-count_svl <- count_svl %>% arrange(Group.2, Group.1)
-names(count_svl) <- c("class", "svl", "count")
-
-count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
-names(count_svl_total) <- c("svl", "total")
-count_svl_total$total <- as.numeric(count_svl_total$total)
-
-### Remove scientific notation
-options(scipen=999)
-
-## Plot with total number of animals by LVS
-count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
-  geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
-  coord_flip() + 
-  theme_light() +
-  theme(legend.position = "none") +
-  labs( title = "Number of animals by LVS", size = 15,
-        y = "Number of animals",
-        x = "Local Veterinary Service", 
-        caption = "Fonte: DGAV")
-
-## Interactive Graph
-ggplotly(count_svl_total_graph, tooltip = "text") %>% 
-  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
-                                       "Local Veterinary Service",
-                                       rep("&nbsp;", 30),
-                                       rep("\n&nbsp;", 2)),
-                                     collapse = "")),
-         legend = list(x = 1, y = 0))
-
-
-# 1.2.2 - Percentage of animals by class by LVS
+# 1.2.1 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
 count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
