@@ -84,7 +84,7 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAM/ArqMadeira_AA
 unzip(temp, exdir = temp_dir)
 
 ## Table
-mad_map <- read_sf(temp_dir)
+mad_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
 mad_geo <- st_as_sf(mad_map, 4326)
@@ -134,7 +134,7 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOr
 unzip(temp, exdir = temp_dir)
 
 ## Table
-aze_map <- read_sf(temp_dir)
+aze_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
 aze_geo <- st_as_sf(aze_map, 4326)
@@ -183,7 +183,7 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GCe
 unzip(temp, exdir = temp_dir)
 
 ## Table
-azc_map <- read_sf(temp_dir)
+azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
 azc_geo <- st_as_sf(azc_map, 4326)
@@ -233,7 +233,7 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GCe
 unzip(temp, exdir = temp_dir)
 
 ## Table
-azc_map <- read_sf(temp_dir)
+azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
 azc_geo <- st_as_sf(azc_map, 4326)
@@ -283,7 +283,7 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOc
 unzip(temp, exdir = temp_dir)
 
 ## Table
-azw_map <- read_sf(temp_dir)
+azw_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
 azw_geo <- st_as_sf(azw_map, 4326)
@@ -322,3 +322,68 @@ ggplot(azw_geo_fvrd) + geom_sf()
 ## Export as SHP files
 st_write(azw_geo_fvrd, dsn = "west_azores_dsavr_map", driver = "ESRI Shapefile")
 st_write(azw_geo_lvs, dsn = "west_azores_svl_map", driver = "ESRI Shapefile")
+
+
+# ISLANDS MAP BY LVS
+## Read maps from github
+azc_svl_map <- read_sf("central_azores_svl_map")
+aze_svl_map <- read_sf("east_azores_svl_map")
+azw_svl_map <- read_sf("west_azores_svl_map")
+mad_svl_map <- read_sf("madeira_svl_map")
+
+## Combine all in one
+isl_svl_map <- rbind(azc_svl_map, aze_svl_map, azw_svl_map, mad_svl_map)
+
+## View map 
+ggplot(isl_svl_map) + geom_sf()
+
+
+
+
+# ISLANDS MAP BY FVRD
+## Read maps from github
+azc_dsavr_map <- read_sf("central_azores_dsavr_map")
+aze_dsavr_map <- read_sf("east_azores_dsavr_map")
+azw_dsavr_map <- read_sf("west_azores_dsavr_map")
+mad_dsavr_map <- read_sf("madeira_dsavr_map")
+
+## Combine all in one
+isl_dsavr_map <- rbind(azc_dsavr_map, aze_dsavr_map, azw_dsavr_map, mad_dsavr_map)
+
+## View map 
+ggplot(isl_dsavr_map) + geom_sf()
+
+## Export as SHP files
+st_write(isl_svl_map, dsn = "islands_svl_map", driver = "ESRI Shapefile")
+st_write(isl_dsavr_map, dsn = "islands_dsavr_map", driver = "ESRI Shapefile")
+
+
+
+# CONTINENT + ISLANDS MAP BY LVS
+## Read maps from github
+continent_svl_map <- read_sf("continent_svl_map")
+islands_svl_map <- read_sf("islands_svl_map")
+
+## Combine all in one 
+portugal_svl_map <- rbind(continent_svl_map, islands_svl_map)
+
+## View map 
+ggplot(portugal_svl_map) + geom_sf()
+
+## Export as SHP files
+st_write(portugal_svl_map, dsn = "pt_svl_map", driver = "ESRI Shapefile")
+
+
+# CONTINENT + ISLANDS MAP BY FVRD
+## Read maps from github
+continent_fvrd_map <- read_sf("continent_dsavr_map")
+islands_fvrd_map <- read_sf("islands_dsavr_map")
+
+## Combine all in one 
+portugal_fvrd_map <- rbind(continent_fvrd_map, islands_fvrd_map)
+
+## View map 
+ggplot(portugal_fvrd_map) + geom_sf()
+
+## Export as SHP files
+st_write(portugal_fvrd_map, dsn = "pt_fvrd_map", driver = "ESRI Shapefile")
