@@ -357,7 +357,7 @@ a1_graph <- ggplot(a1, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A1 mapa interativo
+### A1 Interactive graph
 ggplotly(a1_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -381,7 +381,7 @@ a2_graph <- ggplot(a2, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A2 mapa interativo
+### A2 Interactive graph
 ggplotly(a2_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -406,7 +406,7 @@ a2a_graph <- ggplot(a2a, aes(color = production, group = production, y = count, 
        x = "Year",
        color = " ")
 
-### A2A mapa interativo
+### A2A Interactive graph
 ggplotly(a2a_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -430,7 +430,7 @@ a2na_graph <- ggplot(a2na, aes(color = production, group = production, y = count
        x = "Year",
        color = " ")
 
-### A2NA mapa interativo
+### A2NA Interactive graph
 ggplotly(a2na_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -455,7 +455,7 @@ a3_graph <- ggplot(a3, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A3 mapa interativo
+### A3 Interactive graph
 ggplotly(a3_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -479,7 +479,7 @@ a4_graph <- ggplot(a4, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A4 mapa interativo
+### A4 Interactive graph
 ggplotly(a4_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -503,7 +503,7 @@ a5_graph <- ggplot(a5, aes(color = production, group = production, y = count, x 
        x = "Year",
        color = " ")
 
-### A5 mapa interativo
+### A5 Interactive graph
 ggplotly(a5_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of farms",
@@ -546,7 +546,7 @@ status_percent_graph <- ggplot(status_percentage, aes(x = status, y = percentage
        color = " ",
        x = "Status") 
 
-## Mapa interativo
+## Interactive graph
 ggplotly(status_percent_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Percentage (%)",
@@ -661,7 +661,7 @@ month_graph <- ggplot(slaughter_2019_month, aes(x = month, y = count, color = m)
        color = " ") + 
   scale_x_continuous(breaks = seq(1,12, by = 1))
 
-## Mapa interativo
+## Interactive graph
 ggplotly(month_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of animals slaughtered",
@@ -696,7 +696,7 @@ dsavr_graph <- ggplot(slaughter_dsavr, aes(x = dsavr, y = count, color = dsavr))
        color = " ") +
   scale_y_continuous(breaks = seq(0, 1150000, by = 150000), limits = c(0, 1150000))
   
-## Mapa interativo
+## Interactive graph
 ggplotly(dsavr_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
                                       "Number of animals slaughtered",
@@ -705,6 +705,58 @@ ggplotly(dsavr_graph, tooltip = "text") %>%
                                     collapse = "")))
 
 ##Mapa com nº abates de 2019 por exploração e/ou por SVL;
+
+# 3.5 Mean of daily slaughters in each month between 2016 and 2020
+## Table with mean of daily slaughters in each month between 2016 and 2020
+### Filter by date
+mean_slaughter <- animais_abatidos %>% filter(data_de_entrada >= "2016-01-01" & data_de_entrada <= "2020-12-31")
+
+### Aggregate by day
+mean_slaughter <- as.data.frame(aggregate(mean_slaughter$confirmados, by = list(mean_slaughter$data_de_entrada), FUN = sum))
+names(mean_slaughter) <- c("data_de_entrada", "count")
+
+### Add column with year and month
+mean_slaughter$month <- as.Date(mean_slaughter$data_de_entrada, format = "%m")
+mean_slaughter$month <- format(as.Date(mean_slaughter$month, format = "%Y-%m-%d"), "%m")
+mean_slaughter$year <- as.Date(mean_slaughter$data_de_entrada, format = "%Y")
+mean_slaughter$year <- format(as.Date(mean_slaughter$year, format = "%Y-%m-%d"), "%Y")
+
+### Confirmed, year and  month as numeric
+mean_slaughter$count <- as.numeric(mean_slaughter$count)
+mean_slaughter$month <- as.numeric(mean_slaughter$month)
+mean_slaughter$year <- as.factor(mean_slaughter$year)
+
+### Mean of daily slaughters in each month
+mean_slaughter <- aggregate(mean_slaughter$count, by = list(mean_slaughter$month, mean_slaughter$year), FUN = mean)
+names(mean_slaughter) <- c("month", "year", "mean")
+mean_slaughter$mean <- round(mean_slaughter$mean, digits = 1)
+
+### Add column with written month
+mean_slaughter$m <- mean_slaughter$month
+mean_slaughter$m[mean_slaughter$m == c("1","2","3","4","5","6","7","8","9","10","11","12")] <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+## Geomline with evolution
+mean_slaughter_graph <- ggplot(mean_slaughter, aes(x = month, y = mean, color = year)) + 
+  geom_line(size = 0.7) + 
+  geom_point(size = 1.5, aes(text = paste0(year, "/", m, " - ", "mean of ", mean, " animals slaughtered"))) +
+  scale_color_brewer(palette = "Dark2") + 
+  theme_light() + 
+  theme() + 
+  ggtitle("Mean of daily slaughters in each month between 2016 and 2020") + 
+  labs(y = "Number of animals slaughtered",
+       x = "Month", 
+       color = " ") + 
+  scale_x_continuous(breaks = seq(1,12, by = 1))
+
+## Interactive graph
+ggplotly(mean_slaughter_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Mean of daily slaughters",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
+
+
 
 # 4. Ensaios Laboratoriais
 ##Avaliar nº positivos a DA / total de animais amostrados por SVL ou por laboratório;
