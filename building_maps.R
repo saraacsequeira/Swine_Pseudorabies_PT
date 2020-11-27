@@ -28,8 +28,8 @@ concelhos <- freguesias %>% select(dicofre, concelho, svl, dsavr)
 concelhos$dicofre <- substr(concelhos$dicofre, 1, nchar(concelhos$dicofre) - 2)
 concelhos <- unique(concelhos)
 
-## Delete Algarve with DICOFRE = 4201
-concelhos <- concelhos %>% filter(dicofre != "4201")
+## Replace 4201 DICOFRE LVS  and FVRD - IMPORTANTEEEEEE!!!!
+concelhos$svl[1164] <- replace(concelhos$svl[1164], concelhos$svl[1164] == "DSAVR Algarve", "DRADR AÇORES")
 
 # CONTINENT MAP (https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop)
 temp_dir <- tempdir()

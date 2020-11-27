@@ -119,7 +119,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               legend = TRUE,
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
-              palette = "inferno")
+              palette = "inferno", 
+              auto_highlight = TRUE)
 
 
 
