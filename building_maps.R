@@ -26,6 +26,8 @@ concelhos <- freguesias %>% select(dicofre, concelho, svl, dsavr)
 concelhos$dicofre <- substr(concelhos$dicofre, 1, nchar(concelhos$dicofre) - 2)
 concelhos <- unique(concelhos)
 
+## Delete Algarve with DICOFRE = 4201
+concelhos <- concelhos %>% filter(dicofre != "4201")
 
 # CONTINENT MAP (https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop)
 temp_dir <- tempdir()
@@ -326,9 +328,11 @@ st_write(azw_geo_lvs, dsn = "west_azores_svl_map", driver = "ESRI Shapefile")
 
 # ISLANDS MAP BY LVS
 ## Read maps from github
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs/azores")
 azc_svl_map <- read_sf("central_azores_svl_map")
 aze_svl_map <- read_sf("east_azores_svl_map")
 azw_svl_map <- read_sf("west_azores_svl_map")
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
 mad_svl_map <- read_sf("madeira_svl_map")
 
 ## Combine all in one
@@ -361,6 +365,7 @@ st_write(isl_dsavr_map, dsn = "islands_dsavr_map", driver = "ESRI Shapefile")
 
 # CONTINENT + ISLANDS MAP BY LVS
 ## Read maps from github
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
 continent_svl_map <- read_sf("continent_svl_map")
 islands_svl_map <- read_sf("islands_svl_map")
 
