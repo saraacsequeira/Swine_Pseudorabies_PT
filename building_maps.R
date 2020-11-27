@@ -58,6 +58,7 @@ cont_geo_concelhos <- merge(cont_geo, concelhos, by.x = "Dicofre", by.y = "dicof
 cont_geo_lvs <- cont_geo_concelhos %>%
   group_by(svl) %>%
   summarise(area = sum(area))
+cont_geo_lvs <- na.omit(cont_geo_lvs)
 
 ### View map
 ggplot(cont_geo_lvs) + geom_sf()
@@ -67,6 +68,7 @@ ggplot(cont_geo_lvs) + geom_sf()
 cont_geo_fvrd <- cont_geo_concelhos %>%
   group_by(dsavr) %>%
   summarise(area = sum(area))
+cont_geo_fvrd <- na.omit(cont_geo_fvrd)
 
 ### View geo 
 ggplot(cont_geo_fvrd) + geom_sf()
@@ -159,6 +161,9 @@ aze_geo_lvs <- aze_geo_concelhos %>%
   group_by(svl) %>%
   summarise(area = sum(area))
 
+## Remove row 2
+aze_geo_lvs <- aze_geo_lvs[-2, ]
+
 ### View map
 ggplot(aze_geo_lvs) + geom_sf()
 
@@ -167,6 +172,9 @@ ggplot(aze_geo_lvs) + geom_sf()
 aze_geo_fvrd <- aze_geo_concelhos %>%
   group_by(dsavr) %>%
   summarise(area = sum(area))
+
+## Remove row 2
+aze_geo_fvrd <- aze_geo_fvrd[-2, ]
 
 ### View geo 
 ggplot(aze_geo_fvrd) + geom_sf()
@@ -328,11 +336,10 @@ st_write(azw_geo_lvs, dsn = "west_azores_svl_map", driver = "ESRI Shapefile")
 
 # ISLANDS MAP BY LVS
 ## Read maps from github
-setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs/azores")
 azc_svl_map <- read_sf("central_azores_svl_map")
 aze_svl_map <- read_sf("east_azores_svl_map")
 azw_svl_map <- read_sf("west_azores_svl_map")
-setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
+
 mad_svl_map <- read_sf("madeira_svl_map")
 
 ## Combine all in one
@@ -365,7 +372,6 @@ st_write(isl_dsavr_map, dsn = "islands_dsavr_map", driver = "ESRI Shapefile")
 
 # CONTINENT + ISLANDS MAP BY LVS
 ## Read maps from github
-setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps/lvs")
 continent_svl_map <- read_sf("continent_svl_map")
 islands_svl_map <- read_sf("islands_svl_map")
 
