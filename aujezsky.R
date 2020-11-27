@@ -84,6 +84,7 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
 ## Map with animals' distribution by LVS
 
 ### Read map
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
 
 ### Azores all in one
