@@ -18,7 +18,11 @@ library(reshape2)
 library(mapdeck)
 library(colourvalues)
 library(scales)
+<<<<<<< HEAD
 library(rgdal)
+=======
+library(hrbrthemes)
+>>>>>>> c2d044b353b9636e3405443a57c0f919683a144e
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -687,7 +691,7 @@ ggplotly(month_graph, tooltip = "text") %>%
 ## Table with animals slaughtered in each FVRD in 2019
 slaughter_dsavr <- merge(slaughter_2019, exploracoes, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
 
-### Remove farrms without FVRD info
+### Remove farms without FVRD info
 slaughter_dsavr <- slaughter_dsavr %>% filter(dsavr != "NA")
 slaughter_dsavr <- slaughter_dsavr %>% select(exploracao, data_de_entrada, long_exploracao, lat_exploracao, confirmados, svl, dsavr)
 
@@ -782,10 +786,9 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 
 
-
-
 # 5. Vaccination
-## Number of vaccinated animals per production class by year
+### Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
+
 ### Select rows of interest
 vaccination_data <- vacinacoes %>% 
   filter(vacinacoes$estado == "CONCLUIDO") %>%
@@ -797,13 +800,13 @@ colnames(vaccination_data)[2] <- "exploracao_id"
 ### Only with results between 2016 and 2020
 vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01-01" & vaccination_data$data < "2020-12-31")
 
-## Add status column to our data
+## Number of vaccinated animals per production class by year
+### Add status column to our data
 vaccination_status <- merge(x = vaccination_data, y = status, by = "exploracao_id", all.x = TRUE)
 
 vaccination_production_status <- vaccination_status %>% 
-  select(classificacao_sanitaria, year, exploracao_id, classe_controlo, vacinados_classe) %>%
+  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe) %>%
   arrange(year, exploracao_id)
-
 
 ### Group by status, year and production classes
 vaccination_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$classificacao_sanitaria, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
@@ -828,12 +831,15 @@ vaccination_production_year$year <- format(as.Date(vaccinaction_production_year$
 vaccination_production_year <- na.omit(vaccinaction_production_year)
 
 ### Prepare for graph
-vaccinaction_production_year <- vaccinaction_production_year %>% 
+vaccination_production_year <- vaccination_production_year %>% 
   arrange(year, status, production)
 
 ## Stacked bar plot
-vaccination_graph <- ggplot(vaccinaction_production_year, aes(x = status, y = count, fill = production)) + 
+vaccination_graph <- ggplot(vaccinaction_production_year, 
+                            aes(x = status, y = count, fill = production)) + 
   geom_bar(stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
+  ## to order colors
+  geom_col() +
   facet_wrap(~year) +
   coord_flip() + 
   theme_bw() +
@@ -842,18 +848,19 @@ vaccination_graph <- ggplot(vaccinaction_production_year, aes(x = status, y = co
         x = "", 
         caption = "Fonte: DGAV") +
   scale_fill_brewer(palette = "Accent") +
+  scale_y_continuous(trans = "log2") +
   theme(legend.title = element_blank(),
-        axis.title.x = element_text(size = 12),
-        axis.text.x = element_text(size=8, 
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10, hjust = 1),
+        axis.text.x = element_text(size = 5, angle = 80, hjust = 1, 
                                    color = "black"),
-        axis.text.y = element_text(size=10,
-                                   color = "black")) +
-  guides(fill=guide_legend(title="status"))
+        axis.text.y = element_text(size=8,
+                                   color = "black"))
 
 ## Interactive Graph
 ggplotly(vaccination_graph, tooltip = "text") %>% 
   layout(yaxis = list(title = paste0(c(rep("&nbsp;", 15),
-                                       "Number of Animals",
+                                       "Status",
                                        rep("&nbsp;", 15),
                                        rep("\n&nbsp;", 2)),
                                      collapse = "")),
@@ -862,10 +869,80 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
 
 
 
-## Vaccinated animals by LVS (mapa)
+
 
 ## Percentage of vaccinated animals by status in 2020
-### Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
+#### Select only 2020 data
+vaccination_2020 <- vaccinaction_production_year %>% filter(vaccinaction_production_year$year == "2020")
+
+
+vaccination_2020 <- vaccination_2020 %>%
+  mutate(total = sum(count))
+
+vaccination_2020_graph <- ggplot(vaccinaction_2020, aes(x = status, y = count / total * 100, fill = production)) +
+  geom_col(width = 3, aes(text = paste('Status: ', status,
+                                                '<br>Production class: ', production,
+                                                '<br>Vaccinated Animals: ', count,
+                                                '<br>Percentage (%): ', count / total * 100))) +
+  scale_y_continuous(limits=c(0,1)) +
+  theme_classic() +
+  theme(legend.title = element_blank(),
+        axis.title.x = element_text( size = 12),
+        axis.text.x = element_text(size=8, 
+                                   color = "black"),
+        axis.text.y = element_text(size=10,
+                                   color = "black")) +
+  guides(fill=guide_legend(title="Género")) +
+  scale_fill_brewer(palette = "Accent")
+  
+  
+#Fazer gráfico interativo
+ggplotly(vaccination_2020_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 15),
+                                       "Vaccinated animals",
+                                       rep("&nbsp;", 15),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
+
+
+
+
+
+
+
+
+
+
+
+### Add counts of each farm to the data
+vaccination_counts <- merge(vaccination_production_status, count, by.x = "exploracao_id", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+
+### Select data
+vaccination_counts <- vaccination_counts %>%
+  select(exploracao_id, data.x, year, classificacao_sanitaria, classe_controlo, vacinados_classe, total) %>%
+  arrange(classe_controlo, exploracao_id, classificacao_sanitaria)
+
+### Remove NA values
+vaccination_counts <- na.omit(vaccination_counts)
+
+library(gganimate)
+# Make a ggplot, but add frame=year: one image per year
+ggplot(vaccination_counts, aes(x = classificacao_sanitaria, y = vacinados_classe, size = total, colour = exploracao_id)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~classe_controlo) +
+  # Here comes the gganimate specific bits
+  labs(title = 'Year: {frame_time}', x = 'Status', y = 'Vaccinated animals') +
+  transition_time(~year) +
+  ease_aes('linear')
+
+# Save at gif:
+anim_save("271-ggplot2-animated-gif-chart-with-gganimate2.gif")
+
+
+## Vaccinated animals by LVS (mapa)
 
 
 ## See if vaccination intervals are accourdingly to the plan for each status/ production class (pie chart?)
