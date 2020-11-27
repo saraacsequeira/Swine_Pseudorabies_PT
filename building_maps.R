@@ -272,3 +272,53 @@ ggplot(azc_geo_fvrd) + geom_sf()
 ## Export as SHP files
 st_write(azc_geo_fvrd, dsn = "central_azores_dsavr_map", driver = "ESRI Shapefile")
 st_write(azc_geo_lvs, dsn = "central_azores_svl_map", driver = "ESRI Shapefile")
+
+
+###### FAZER TERMINATE R ########
+
+# WESTERN AZORES MAP
+temp_dir <- tempdir()
+temp <- tempfile(tmpdir = temp_dir, fileext = ".zip")
+download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GOcidental_AAd_CAOP2019.zip", destfile = temp)
+unzip(temp, exdir = temp_dir)
+
+## Table
+azw_map <- read_sf(temp_dir)
+
+## Convert SRS to WGS84
+azw_geo <- st_as_sf(azw_map, 4326)
+azw_geo <- st_transform(azw_geo, "+proj=longlat +datum=WGS84")
+
+### View map
+ggplot(azw_geo) + geom_sf()
+
+## Add column with area
+azw_geo$area <- st_area(azw_geo)
+
+## Remove last 2 digits from DICOFRE
+azw_geo$DICOFRE <- substr(azw_geo$DICOFRE, 1, nchar(azw_geo$DICOFRE) - 2)
+
+## Merge with concelho's table
+azw_geo_concelhos <- merge(azw_geo, concelhos, by.x = "DICOFRE", by.y = "dicofre", all.x = TRUE, all.y = FALSE)
+
+## Aggregate by LVS
+azw_geo_lvs <- azw_geo_concelhos %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
+
+### View map
+ggplot(azw_geo_lvs) + geom_sf()
+
+
+## Aggregate by FVRD
+azw_geo_fvrd <- azw_geo_concelhos %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
+### View geo 
+ggplot(azw_geo_fvrd) + geom_sf()
+
+
+## Export as SHP files
+st_write(azw_geo_fvrd, dsn = "west_azores_dsavr_map", driver = "ESRI Shapefile")
+st_write(azw_geo_lvs, dsn = "west_azores_svl_map", driver = "ESRI Shapefile")
