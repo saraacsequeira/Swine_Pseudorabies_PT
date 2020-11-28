@@ -54,6 +54,9 @@ cont_geo$Dicofre <- substr(cont_geo$Dicofre, 1, nchar(cont_geo$Dicofre) - 2)
 ## Merge with concelho's table
 cont_geo_concelhos <- merge(cont_geo, concelhos, by.x = "Dicofre", by.y = "dicofre", all = TRUE)
 
+## Remove NA 
+cont_geo_concelhos <- na.omit(cont_geo_concelhos)
+
 ## Aggregate by LVS
 cont_geo_lvs <- cont_geo_concelhos %>%
   group_by(svl) %>%

@@ -20,6 +20,7 @@ library(colourvalues)
 library(scales)
 library(rgdal)
 library(hrbrthemes)
+library(sf)
 
 
 # Connection with MySQL database
