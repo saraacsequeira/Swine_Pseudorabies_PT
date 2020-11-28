@@ -229,7 +229,7 @@ class_last <- class_last %>%
 classification_count <- class %>%
   mutate(count = 1)
 
-## Add the numer of animals by farm
+## Add the number of animals by farm
 ### Merge tables
 class_last <- merge(class_last, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
 class_last <- class_last %>% select(exploracao, longitude.x, latitude.x, svl.x, classificacao_sanitaria, total)
@@ -255,7 +255,7 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
                   palette = "spectral")
 
-## Map - percentage of status by SVL (in 2020) ??????
+## Map - percentage of status by SVL (in 2020) 
 
 
 
@@ -553,10 +553,6 @@ ggplotly(a5_graph, tooltip = "text") %>%
 
 
 
-
-
-
-
 ## Percentage of farms by status
 ### Table with number of farms by status 
 status_percentage <- as.data.frame(aggregate(x = class_last, list(status = class_last$classificacao_sanitaria), FUN = length))
@@ -609,7 +605,7 @@ slaughter_2019 <- animais_abatidos %>% filter(data_de_entrada <= "2019-12-31" & 
 ### Remove farms without location
 slaughter_2019 <- slaughter_2019 %>% filter(long_exploracao != "NA")
 
-### Total number of animals slaghtered by farm
+### Total number of animals slaUghtered by farm
 slaughter_2019_total <- aggregate(slaughter_2019$confirmados, by = list(slaughter_2019$exploracao, slaughter_2019$long_exploracao, slaughter_2019$lat_exploracao), FUN = sum)
 names(slaughter_2019_total) <- c("exploracao", "longitude", "latitude", "count")
 slaughter_2019_total$count <- as.numeric(slaughter_2019_total$count)
@@ -743,9 +739,51 @@ ggplotly(dsavr_graph, tooltip = "text") %>%
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")))
 
-##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 
-# 3.5 Mean of daily slaughters in each month between 2016 and 2020
+# 3.5 Animals slaughtered by LVS in 2019
+## Table with animals slaughtered in each FVRD in 2019
+slaughter_lvs <- merge(slaughter_2019, exploracoes, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+
+### Remove farms without FVRD info
+slaughter_lvs <- slaughter_lvs %>% filter(svl != "NA")
+slaughter_lvs <- slaughter_lvs %>% select(exploracao, data_de_entrada, long_exploracao, lat_exploracao, confirmados, svl, dsavr)
+
+slaughter_lvs <- slaughter_lvs %>%
+  group_by(svl) %>%
+  summarise(confirmados = sum(confirmados))
+names(slaughter_lvs) <- c("svl", "count")
+slaughter_lvs$count <- as.numeric(slaughter_lvs$count)
+
+## Merge with map
+slaughter_lvs_map <- merge(slaughter_lvs, pt_lvs_map, by.x = "svl", by.y = "svl", all = TRUE)
+
+### Add column with label
+slaughter_lvs_map$info <- paste0(slaughter_lvs_map$svl, "<br>", slaughter_lvs_map$count, " animals slaughtered")
+
+### Total as numeric
+slaughter_lvs_map$count <- as.numeric(slaughter_lvs_map$count)
+
+### Define categories based on total animals
+slaughter_lvs_map$categoria <- cut(slaughter_lvs_map$count, c(0,10000,25000,50000,100000,200000,300000,400000,500000))
+levels(slaughter_lvs_map$categoria) <- c("0;10000", "10000;25000", "25000;50000", "50000;100000", "100000;200000", "200000;300000", "300000;400000", "400000;500000")
+
+### Convert to sf
+slaughter_lvs_map <- st_as_sf(slaughter_lvs_map)
+
+
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = slaughter_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "categoria",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
+              palette = "heat_hcl", 
+              auto_highlight = TRUE)
+
+
+# 3.6 Mean of daily slaughters in each month between 2016 and 2020
 ## Table with mean of daily slaughters in each month between 2016 and 2020
 ### Filter by date
 mean_slaughter <- animais_abatidos %>% filter(data_de_entrada >= "2016-01-01" & data_de_entrada <= "2020-12-31")
