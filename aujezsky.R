@@ -18,7 +18,6 @@ library(reshape2)
 library(mapdeck)
 library(colourvalues)
 library(scales)
-library(hrbrthemes)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -45,7 +44,7 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 # 1 - PIG FARM'S DISTRIBUTION
 
-## 1.1 - Pig farm's distribution by LVS (local veterinary service) - HOW TO HAVE A LAYER WITH THAT?
+## 1.1 - Pig farm's distribution by LVS (local veterinary service)
 
 
 
@@ -341,6 +340,7 @@ ggplotly(farms_production_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
+
 # Line chart for each status
 ## A1 ggplot
 a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
@@ -518,7 +518,7 @@ ggplotly(a5_graph, tooltip = "text") %>%
 
 
 
-## Percentage of farms by status
+## Percentage of farms by status in 2020
 ### Table with number of farms by status 
 status_percentage <- as.data.frame(aggregate(x = class_last, list(status = class_last$classificacao_sanitaria), FUN = length))
 status_percentage <- status_percentage %>% select(status, total)
@@ -558,7 +558,7 @@ ggplotly(status_percent_graph, tooltip = "text") %>%
 
 
 # 3. Slaughters
-# 3.1 Number of animals slaughtered by farm in 2019
+# 3.1.1 Number of animals slaughtered by farm in 2019
 ## Table with animals slaughtered by farm in 2019
 ### Change date format
 animais_abatidos$data_de_entrada <- strftime(animais_abatidos$data_de_entrada, format = "%Y-%m-%d")
@@ -595,6 +595,11 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals slaughtered by farm in 2019")),
                   palette = "heat_hcl")
+
+
+
+# 3.1.2 Number of animals slaughtered by SVL in 2019
+
 
 
 # 3.2 Principal itineraries to the slaughterhouses in 2019
@@ -796,34 +801,35 @@ vaccination_production_year <- as.data.frame(aggregate(vaccination_production_st
 names(vaccination_production_year) <- c("status", "year", "production", "count")
 
 ### Remove A0 and SC status
-vaccination_production_year <- as.data.frame(vaccinaction_production_year[!vaccinaction_production_year$status == "A0" & !vaccinaction_production_year$status == "SC",])
+vaccination_production_year <- as.data.frame(vaccination_production_year[!vaccination_production_year$status == "A0" & !vaccination_production_year$status == "SC",])
 
 ### Count as numeric
-vaccination_production_year$count <- as.numeric(vaccinaction_production_year$count)
+vaccination_production_year$count <- as.numeric(vaccination_production_year$count)
 
 ### Chane to english
-vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Engorda", "Fattening")
-vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Reprodutores", "Breeding")
-vaccination_production_year$production <- replace(vaccinaction_production_year$production, vaccinaction_production_year$production == "Substituição", "Replacement")
+vaccination_production_year$production <- replace(vaccination_production_year$production, vaccination_production_year$production == "Engorda", "Fattening")
+vaccination_production_year$production <- replace(vaccination_production_year$production, vaccination_production_year$production == "Reprodutores", "Breeding")
+vaccination_production_year$production <- replace(vaccination_production_year$production, vaccination_production_year$production == "Substituição", "Replacement")
 
 ### Year as Date
-vaccination_production_year$year <- as.Date(vaccinaction_production_year$year, format = "%Y")
-vaccination_production_year$year <- format(as.Date(vaccinaction_production_year$year, format = "%Y-%m-%d"), "%Y")
+vaccination_production_year$year <- as.Date(vaccination_production_year$year, format = "%Y")
+vaccination_production_year$year <- format(as.Date(vaccination_production_year$year, format = "%Y-%m-%d"), "%Y")
 
 ### Remove NA values
-vaccination_production_year <- na.omit(vaccinaction_production_year)
+vaccination_production_year <- na.omit(vaccination_production_year)
 
 ### Prepare for graph
 vaccination_production_year <- vaccination_production_year %>% 
   arrange(year, status, production)
 
+
 ## Stacked bar plot
-vaccination_graph <- ggplot(vaccinaction_production_year, 
+vaccination_graph <- ggplot(vaccination_production_year, 
                             aes(x = status, y = count, fill = production)) + 
-  geom_bar(stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
-  ## to order colors
+  geom_bar(position = "stack", stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
   geom_col() +
   facet_wrap(~year) +
+  scale_y_continuous(trans = "log10") +
   coord_flip() + 
   theme_bw() +
   labs( title = "Number of animals vaccinated by production type in each status over the years", size = 20,
@@ -831,7 +837,6 @@ vaccination_graph <- ggplot(vaccinaction_production_year,
         x = "", 
         caption = "Fonte: DGAV") +
   scale_fill_brewer(palette = "Accent") +
-  scale_y_continuous(trans = "log2") +
   theme(legend.title = element_blank(),
         axis.title.x = element_text(size = 10),
         axis.title.y = element_text(size = 10, hjust = 1),
@@ -848,25 +853,44 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
                                        rep("\n&nbsp;", 2)),
                                      collapse = "")),
          legend = list(x = 1, y = 0))
-      ## tentar resolver a apresentação de texto do eixo x e cores na mesma ordem
+      ## tentar resolver a apresentação de texto do eixo x e interactividade
 
 
+
+
+## Vacinnated animals by production class by month (2020)
+vaccination_production_status$data.x <- as.Date(vaccination_production_status$data.x)
+
+vaccination_production_status <- na.omit(vaccination_production_status)
+
+### Geom_density plot of 2020
+vaccination_production_status %>%
+  filter(year == "2020") %>%
+  ggplot(aes(data.x, fill = classe_controlo)) + 
+  geom_density(alpha = 0.3, bw=0.5, position = "stack") + 
+  scale_fill_brewer(palette="Dark2") +
+  scale_x_continuous(trans = "log2") 
 
 
 
 ## Percentage of vaccinated animals by status in 2020
 #### Select only 2020 data
-vaccination_2020 <- vaccinaction_production_year %>% filter(vaccinaction_production_year$year == "2020")
+vaccination_2020 <- vaccination_production_year %>% filter(vaccination_production_year$year == "2020")
 
-
+## Add new column - total vaccinated animals
 vaccination_2020 <- vaccination_2020 %>%
   mutate(total = sum(count))
 
-vaccination_2020_graph <- ggplot(vaccinaction_2020, aes(x = status, y = count / total * 100, fill = production)) +
-  geom_col(width = 3, aes(text = paste('Status: ', status,
+## Add percentage of vaccinated animals in 2020
+vaccination_2020$percentage <- vaccination_2020$count / sum(vaccination_2020$count) *100
+vaccination_2020$percentage <- round(vaccination_2020$percentage, digits = 3)
+
+
+vaccination_2020_graph <- ggplot(vaccination_2020, aes(x = status, y = count / total * 100, fill = production)) +
+  geom_col(position = "dodge", size = 10, width = 1, aes(text = paste('Status: ', status,
                                                 '<br>Production class: ', production,
                                                 '<br>Vaccinated Animals: ', count,
-                                                '<br>Percentage (%): ', count / total * 100))) +
+                                                '<br>Percentage (%): ', percentage))) +
   scale_y_continuous(limits=c(0,1)) +
   theme_classic() +
   theme(legend.title = element_blank(),
@@ -892,37 +916,42 @@ ggplotly(vaccination_2020_graph, tooltip = "text") %>%
 
 
 
+## Vaccinated animals 
+
+
+
+## Geomline 
+ggplot(vaccination, aes(x = month, y = count, color = production)) +
+  geom_line(size = 0.5, color = "gray60") + 
+  geom_point(size = 2, aes(text = paste0(m, " - ", count, " animals vaccinated"))) + 
+  scale_color_brewer(palette = "Paired") + 
+  theme_light() + 
+  theme() + 
+  ggtitle("Animals vaccinated over the year's") + 
+  labs(y = "Number of animals vaccinated",
+       x = "Month", 
+       color = " ") + 
+  scale_x_continuous(breaks = seq(1,12, by = 1))
+
+## Interactive graph
+ggplotly(month_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of animals slaughtered",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
 
 
 
 
+## box plot, % vaccinated animals by status (x_axis) and farm (points)
+murders %>% mutate(rate = total/population*100000) %>%
+  mutate(region=reorder(region, rate, FUN=median)) %>%
+  ggplot(aes(region, rate)) +
+  geom_boxplot() +
+  geom_point()
 
 
-### Add counts of each farm to the data
-vaccination_counts <- merge(vaccination_production_status, count, by.x = "exploracao_id", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
-
-### Select data
-vaccination_counts <- vaccination_counts %>%
-  select(exploracao_id, data.x, year, classificacao_sanitaria, classe_controlo, vacinados_classe, total) %>%
-  arrange(classe_controlo, exploracao_id, classificacao_sanitaria)
-
-### Remove NA values
-vaccination_counts <- na.omit(vaccination_counts)
-
-library(gganimate)
-# Make a ggplot, but add frame=year: one image per year
-ggplot(vaccination_counts, aes(x = classificacao_sanitaria, y = vacinados_classe, size = total, colour = exploracao_id)) +
-  geom_point(alpha = 0.7, show.legend = FALSE) +
-  scale_size(range = c(2, 12)) +
-  scale_x_log10() +
-  facet_wrap(~classe_controlo) +
-  # Here comes the gganimate specific bits
-  labs(title = 'Year: {frame_time}', x = 'Status', y = 'Vaccinated animals') +
-  transition_time(~year) +
-  ease_aes('linear')
-
-# Save at gif:
-anim_save("271-ggplot2-animated-gif-chart-with-gganimate2.gif")
 
 
 ## Vaccinated animals by LVS (mapa)
@@ -930,6 +959,14 @@ anim_save("271-ggplot2-animated-gif-chart-with-gganimate2.gif")
 
 ## See if vaccination intervals are accourdingly to the plan for each status/ production class (pie chart?)
 ###Verificação de cumprimento de prazos. 
+
+
+
+
+
+##NEXT POSSIBLE QUESTIONS : Geom_point with vaccinated animals vs slaughtered animals , or other any other possible correlations?
+
+
 
 
 
