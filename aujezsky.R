@@ -18,6 +18,10 @@ library(reshape2)
 library(mapdeck)
 library(colourvalues)
 library(scales)
+library(rgdal)
+library(hrbrthemes)
+library(sf)
+
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -46,9 +50,79 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 ## 1.1 - Pig farm's distribution by LVS (local veterinary service)
 
+## Table with total of animals by LVS
+count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
+count_svl <- count_svl %>% arrange(Group.2, Group.1)
+names(count_svl) <- c("class", "svl", "count")
+
+count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
+names(count_svl_total) <- c("svl", "total")
+count_svl_total$total <- as.numeric(count_svl_total$total)
+
+### Remove scientific notation
+options(scipen=999)
+
+## Plot with total number of animals by LVS
+count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
+  geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
+  coord_flip() + 
+  theme_light() +
+  theme(legend.position = "none") +
+  labs( title = "Number of animals by LVS", size = 15,
+        y = "Number of animals",
+        x = "Local Veterinary Service", 
+        caption = "Fonte: DGAV")
+
+## Interactive Graph
+ggplotly(count_svl_total_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+                                       "Local Veterinary Service",
+                                       rep("&nbsp;", 30),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
+
+## Map with animals' distribution by LVS
+
+### Read map
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
+pt_lvs_map <- read_sf("pt_svl_map")
+
+### Azores all in one
+pt_lvs_map <- pt_lvs_map %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
+
+### Merge map with count by LVS
+count_lvs_map <- merge(count_svl_total, pt_lvs_map, by.x = "svl", by.y = "svl", all.x = TRUE, all.y = TRUE)
+
+### Add column with label
+count_lvs_map$info <- paste0(count_lvs_map$svl, "<br>", count_lvs_map$total, " animals")
+
+### Replace NA de Foz Côa com valor
+count_lvs_map$total[is.na(count_lvs_map$total)] <- 0
+
+### Total as numeric
+count_lvs_map$total <- as.numeric(count_lvs_map$total)
+
+### Define categories based on total animals
+count_lvs_map$categoria <- cut(count_lvs_map$total, c(0,10000,25000,50000,100000,200000,300000,400000,500000))
+levels(count_lvs_map$categoria) <- c("0;10000", "10000;25000", "25000;50000", "50000;100000", "100000;200000", "200000;300000", "300000;400000", "400000;500000")
+
+### Convert to sf
+count_lvs_map <- st_as_sf(count_lvs_map)
 
 
-
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = count_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "categoria",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
+              palette = "inferno", 
+              auto_highlight = TRUE)
 
 
 
@@ -99,41 +173,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 
 
 
-# 1.2.1 - Number of animals by LVS
-## Table with total of animals by LVS
-count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
-count_svl <- count_svl %>% arrange(Group.2, Group.1)
-names(count_svl) <- c("class", "svl", "count")
-
-count_svl_total <- as.data.frame(aggregate(count_svl$count, by = list(count_svl$svl), FUN = sum))
-names(count_svl_total) <- c("svl", "total")
-count_svl_total$total <- as.numeric(count_svl_total$total)
-
-### Remove scientific notation
-options(scipen=999)
-
-## Plot with total number of animals by LVS
-count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
-  geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
-  coord_flip() + 
-  theme_light() +
-  theme(legend.position = "none") +
-  labs( title = "Number of animals by LVS", size = 15,
-        y = "Number of animals",
-        x = "Local Veterinary Service", 
-        caption = "Fonte: DGAV")
-
-## Interactive Graph
-ggplotly(count_svl_total_graph, tooltip = "text") %>% 
-  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
-                                       "Local Veterinary Service",
-                                       rep("&nbsp;", 30),
-                                       rep("\n&nbsp;", 2)),
-                                     collapse = "")),
-         legend = list(x = 1, y = 0))
-
-
-# 1.2.2 - Percentage of animals by class by LVS
+# 1.2.1 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
 count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
@@ -189,7 +229,7 @@ class_last <- class_last %>%
 classification_count <- class %>%
   mutate(count = 1)
 
-## Add the numer of animals by farm
+## Add the number of animals by farm
 ### Merge tables
 class_last <- merge(class_last, count, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
 class_last <- class_last %>% select(exploracao, longitude.x, latitude.x, svl.x, classificacao_sanitaria, total)
@@ -215,7 +255,7 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
                   palette = "spectral")
 
-## Map - percentage of status by SVL (in 2020) ??????
+## Map - percentage of status by SVL (in 2020) 
 
 
 
@@ -514,11 +554,7 @@ ggplotly(a5_graph, tooltip = "text") %>%
 
 
 
-
-
-
-
-## Percentage of farms by status in 2020
+## Percentage of farms by status
 ### Table with number of farms by status 
 status_percentage <- as.data.frame(aggregate(x = class_last, list(status = class_last$classificacao_sanitaria), FUN = length))
 status_percentage <- status_percentage %>% select(status, total)
@@ -570,7 +606,7 @@ slaughter_2019 <- animais_abatidos %>% filter(data_de_entrada <= "2019-12-31" & 
 ### Remove farms without location
 slaughter_2019 <- slaughter_2019 %>% filter(long_exploracao != "NA")
 
-### Total number of animals slaghtered by farm
+### Total number of animals slaUghtered by farm
 slaughter_2019_total <- aggregate(slaughter_2019$confirmados, by = list(slaughter_2019$exploracao, slaughter_2019$long_exploracao, slaughter_2019$lat_exploracao), FUN = sum)
 names(slaughter_2019_total) <- c("exploracao", "longitude", "latitude", "count")
 slaughter_2019_total$count <- as.numeric(slaughter_2019_total$count)
@@ -709,9 +745,51 @@ ggplotly(dsavr_graph, tooltip = "text") %>%
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")))
 
-##Mapa com nº abates de 2019 por exploração e/ou por SVL;
 
-# 3.5 Mean of daily slaughters in each month between 2016 and 2020
+# 3.5 Animals slaughtered by LVS in 2019
+## Table with animals slaughtered in each FVRD in 2019
+slaughter_lvs <- merge(slaughter_2019, exploracoes, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
+
+### Remove farms without FVRD info
+slaughter_lvs <- slaughter_lvs %>% filter(svl != "NA")
+slaughter_lvs <- slaughter_lvs %>% select(exploracao, data_de_entrada, long_exploracao, lat_exploracao, confirmados, svl, dsavr)
+
+slaughter_lvs <- slaughter_lvs %>%
+  group_by(svl) %>%
+  summarise(confirmados = sum(confirmados))
+names(slaughter_lvs) <- c("svl", "count")
+slaughter_lvs$count <- as.numeric(slaughter_lvs$count)
+
+## Merge with map
+slaughter_lvs_map <- merge(slaughter_lvs, pt_lvs_map, by.x = "svl", by.y = "svl", all = TRUE)
+
+### Add column with label
+slaughter_lvs_map$info <- paste0(slaughter_lvs_map$svl, "<br>", slaughter_lvs_map$count, " animals slaughtered")
+
+### Total as numeric
+slaughter_lvs_map$count <- as.numeric(slaughter_lvs_map$count)
+
+### Define categories based on total animals
+slaughter_lvs_map$categoria <- cut(slaughter_lvs_map$count, c(0,10000,25000,50000,100000,200000,300000,400000,500000))
+levels(slaughter_lvs_map$categoria) <- c("0;10000", "10000;25000", "25000;50000", "50000;100000", "100000;200000", "200000;300000", "300000;400000", "400000;500000")
+
+### Convert to sf
+slaughter_lvs_map <- st_as_sf(slaughter_lvs_map)
+
+
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = slaughter_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "categoria",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
+              palette = "heat_hcl", 
+              auto_highlight = TRUE)
+
+
+# 3.6 Mean of daily slaughters in each month between 2016 and 2020
 ## Table with mean of daily slaughters in each month between 2016 and 2020
 ### Filter by date
 mean_slaughter <- animais_abatidos %>% filter(data_de_entrada >= "2016-01-01" & data_de_entrada <= "2020-12-31")

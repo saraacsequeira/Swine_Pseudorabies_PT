@@ -15,6 +15,8 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
                         host = "localhost",
                         user = "root",
                         password = "projetoporcos")
+# Directory
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 
 # Read table from MYSQL
 freguesias <- dbReadTable(connection, "st_tabela_freguesias")
@@ -34,10 +36,10 @@ download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-Cont/Cont_AAD_CAO
 unzip(temp, exdir = temp_dir)
 
 ## Table
-cont_map <- read_sf(temp_dir)
+cont_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-cont_geo <- st_as_sf(cont_map, 4326)
+cont_geo <- st_as_sf(cont_geo, 4326)
 cont_geo <- st_transform(cont_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -52,10 +54,14 @@ cont_geo$Dicofre <- substr(cont_geo$Dicofre, 1, nchar(cont_geo$Dicofre) - 2)
 ## Merge with concelho's table
 cont_geo_concelhos <- merge(cont_geo, concelhos, by.x = "Dicofre", by.y = "dicofre", all = TRUE)
 
+## Remove NA 
+cont_geo_concelhos <- na.omit(cont_geo_concelhos)
+
 ## Aggregate by LVS
 cont_geo_lvs <- cont_geo_concelhos %>%
   group_by(svl) %>%
   summarise(area = sum(area))
+cont_geo_lvs <- na.omit(cont_geo_lvs)
 
 ### View map
 ggplot(cont_geo_lvs) + geom_sf()
@@ -65,6 +71,7 @@ ggplot(cont_geo_lvs) + geom_sf()
 cont_geo_fvrd <- cont_geo_concelhos %>%
   group_by(dsavr) %>%
   summarise(area = sum(area))
+cont_geo_fvrd <- na.omit(cont_geo_fvrd)
 
 ### View geo 
 ggplot(cont_geo_fvrd) + geom_sf()
@@ -87,7 +94,7 @@ unzip(temp, exdir = temp_dir)
 mad_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-mad_geo <- st_as_sf(mad_map, 4326)
+mad_geo <- st_as_sf(mad_geo, 4326)
 mad_geo <- st_transform(mad_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -137,7 +144,7 @@ unzip(temp, exdir = temp_dir)
 aze_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-aze_geo <- st_as_sf(aze_map, 4326)
+aze_geo <- st_as_sf(aze_geo, 4326)
 aze_geo <- st_transform(aze_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -157,12 +164,28 @@ aze_geo_lvs <- aze_geo_concelhos %>%
   group_by(svl) %>%
   summarise(area = sum(area))
 
+## Change LVS name
+aze_geo_lvs$svl <- replace(aze_geo_lvs$svl, aze_geo_lvs$svl == "DSAVR Algarve", "DRADR AÇORES")
+
+## Merge the 2 in one
+aze_geo_lvs <- aze_geo_lvs %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
+
 ### View map
 ggplot(aze_geo_lvs) + geom_sf()
 
 
 ## Aggregate by FVRD
 aze_geo_fvrd <- aze_geo_concelhos %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
+## Change FVRD name
+aze_geo_fvrd$dsavr <- replace(aze_geo_fvrd$dsavr, aze_geo_fvrd$dsavr == "DSAVR Algarve", "DRADR - R. A. AÇORES")
+
+## Merge the 2 in one
+aze_geo_fvrd <- aze_geo_fvrd %>%
   group_by(dsavr) %>%
   summarise(area = sum(area))
 
@@ -186,7 +209,7 @@ unzip(temp, exdir = temp_dir)
 azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azc_geo <- st_as_sf(azc_map, 4326)
+azc_geo <- st_as_sf(azc_geo, 4326)
 azc_geo <- st_transform(azc_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -236,7 +259,7 @@ unzip(temp, exdir = temp_dir)
 azc_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azc_geo <- st_as_sf(azc_map, 4326)
+azc_geo <- st_as_sf(azc_geo, 4326)
 azc_geo <- st_transform(azc_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -286,7 +309,7 @@ unzip(temp, exdir = temp_dir)
 azw_geo <- read_sf(temp_dir)
 
 ## Convert SRS to WGS84
-azw_geo <- st_as_sf(azw_map, 4326)
+azw_geo <- st_as_sf(azw_geo, 4326)
 azw_geo <- st_transform(azw_geo, "+proj=longlat +datum=WGS84")
 
 ### View map
@@ -329,6 +352,7 @@ st_write(azw_geo_lvs, dsn = "west_azores_svl_map", driver = "ESRI Shapefile")
 azc_svl_map <- read_sf("central_azores_svl_map")
 aze_svl_map <- read_sf("east_azores_svl_map")
 azw_svl_map <- read_sf("west_azores_svl_map")
+
 mad_svl_map <- read_sf("madeira_svl_map")
 
 ## Combine all in one
