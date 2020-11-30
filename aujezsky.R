@@ -83,11 +83,9 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
          legend = list(x = 1, y = 0))
 
 ## Map with animals' distribution by LVS
-
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
-
 ### Azores all in one
 pt_lvs_map <- pt_lvs_map %>%
   group_by(svl) %>%
@@ -853,8 +851,8 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 
 # 5. Vaccination
-### Nº e Percentagem de animais vacinados por classificação sanitária (lolipop chart com 2 eixos, 1 para nº e 1 para %)
 
+## Vaccinated animals by production class and status over the years
 ### Select rows of interest
 vaccination_data <- vacinacoes %>% 
   filter(vacinacoes$estado == "CONCLUIDO") %>%
@@ -898,16 +896,16 @@ vaccination_production_year <- na.omit(vaccination_production_year)
 
 ### Prepare for graph
 vaccination_production_year <- vaccination_production_year %>% 
-  arrange(year, status, production)
-
-
+  group_by(year) %>%
+  mutate(position = rank(count))
+  # Order by vaccinated counts
+         
 ## Stacked bar plot
 vaccination_graph <- ggplot(vaccination_production_year, 
-                            aes(x = status, y = count, fill = production)) + 
+                            aes(x = status, y = count, fill = reorder(production, count), group = position)) + 
   geom_bar(position = "stack", stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
-  geom_col() +
   facet_wrap(~year) +
-  scale_y_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log2") +
   coord_flip() + 
   theme_bw() +
   labs( title = "Number of animals vaccinated by production type in each status over the years", size = 20,
@@ -934,41 +932,40 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
       ## tentar resolver a apresentação de texto do eixo x e interactividade
 
 
+## Percentage of vaccinated animals by status and production class in 2019
+#### Select only 2019 data
+vaccination_2019 <- vaccination_production_status %>% 
+  filter(year == "2019")
+
+## Remove A0 and SC status
+vaccination_2019 <- as.data.frame(vaccination_2019[!vaccination_2019$classificacao_sanitaria == "A0" & !vaccination_2019$classificacao_sanitaria == "SC",])
+
+### Add percentage of vaccinated animals in 2020
+#### Select only 2020 count and status values
+count_19 <- count %>%
+  filter(data > "2018-12-31" & data < "2020-01-01")
+
+status_19 <- status %>%
+  filter(data > "2018-12-31" & data < "2020-01-01")
+
+#### Number of animals by production class and status in 2020
+count_status <- merge(x = count_19, y = status_19, by.x = "exploracao", by.y = "exploracao_id", all.x = TRUE, all.y = TRUE)
 
 
-## Vacinnated animals by production class by month (2020)
-vaccination_production_status$data.x <- as.Date(vaccination_production_status$data.x)
-
-vaccination_production_status <- na.omit(vaccination_production_status)
-
-### Geom_density plot of 2020
-vaccination_production_status %>%
-  filter(year == "2020") %>%
-  ggplot(aes(data.x, fill = classe_controlo)) + 
-  geom_density(alpha = 0.3, bw=0.5, position = "stack") + 
-  scale_fill_brewer(palette="Dark2") +
-  scale_x_continuous(trans = "log2") 
 
 
 
-## Percentage of vaccinated animals by status in 2020
-#### Select only 2020 data
-vaccination_2020 <- vaccination_production_year %>% filter(vaccination_production_year$year == "2020")
 
-## Add new column - total vaccinated animals
-vaccination_2020 <- vaccination_2020 %>%
-  mutate(total = sum(count))
-
-## Add percentage of vaccinated animals in 2020
-vaccination_2020$percentage <- vaccination_2020$count / sum(vaccination_2020$count) *100
-vaccination_2020$percentage <- round(vaccination_2020$percentage, digits = 3)
+### Percentage of vaccinated animals
+vaccination_2019$percentage <- vaccination_2019$count / sum(vaccination_2019$count) *100
+vaccination_2019$percentage <- round(vaccination_2019$percentage, digits = 5)
 
 
-vaccination_2020_graph <- ggplot(vaccination_2020, aes(x = status, y = count / total * 100, fill = production)) +
+vaccination_2020_graph <- ggplot(vaccination_2019, aes(x = status, y = percentage * 100, fill = production)) +
   geom_col(position = "dodge", size = 10, width = 1, aes(text = paste('Status: ', status,
                                                 '<br>Production class: ', production,
                                                 '<br>Vaccinated Animals: ', count,
-                                                '<br>Percentage (%): ', percentage))) +
+                                                '<br>Percentage (%): ', percentage *100))) +
   scale_y_continuous(limits=c(0,1)) +
   theme_classic() +
   theme(legend.title = element_blank(),
@@ -982,7 +979,7 @@ vaccination_2020_graph <- ggplot(vaccination_2020, aes(x = status, y = count / t
   
   
 #Fazer gráfico interativo
-ggplotly(vaccination_2020_graph, tooltip = "text") %>% 
+ggplotly(vaccination_2019_graph, tooltip = "text") %>% 
   layout(yaxis = list(title = paste0(c(rep("&nbsp;", 15),
                                        "Vaccinated animals",
                                        rep("&nbsp;", 15),
@@ -994,12 +991,31 @@ ggplotly(vaccination_2020_graph, tooltip = "text") %>%
 
 
 
-## Vaccinated animals 
+## Vacinnated animals by production class over the months (2019)
+vaccination_production_status$data.x <- as.Date(vaccination_production_status$data.x)
+vaccination_production_status <- na.omit(vaccination_production_status)
+
+
+### Add column with the month
+slaughter_2019_month$month <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
+slaughter_2019_month$m <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
+slaughter_2019_month$month <- format(as.Date(slaughter_2019_month$month, format = "%Y-%m-%d"), "%m")
+slaughter_2019_month$m <- format(as.Date(slaughter_2019_month$m, format = "%Y-%m-%d"), "%B")
+
+
+### Geom_density plot of 2020
+vaccination_production_status %>%
+  filter(year == "2020") %>%
+  ggplot(aes(data.x, fill = classe_controlo)) + 
+  geom_density(alpha = 0.3, bw=0.5, position = "stack") + 
+  scale_fill_brewer(palette="Dark2") +
+  scale_x_continuous(trans = "log2")
+
 
 
 
 ## Geomline 
-ggplot(vaccination, aes(x = month, y = count, color = production)) +
+ggplot(vaccination_2020, aes(x = month, y = count, color = production)) +
   geom_line(size = 0.5, color = "gray60") + 
   geom_point(size = 2, aes(text = paste0(m, " - ", count, " animals vaccinated"))) + 
   scale_color_brewer(palette = "Paired") + 
@@ -1014,7 +1030,7 @@ ggplot(vaccination, aes(x = month, y = count, color = production)) +
 ## Interactive graph
 ggplotly(month_graph, tooltip = "text") %>%
   layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
-                                      "Number of animals slaughtered",
+                                      "Number of animals vaccinated",
                                       rep("&nbsp;", 30),
                                       rep("\n&nbsp;", 2)),
                                     collapse = "")))
