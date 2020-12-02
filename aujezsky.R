@@ -85,6 +85,7 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
 ## Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
+setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
 ### Azores all in one
 pt_lvs_map <- pt_lvs_map %>%
@@ -135,7 +136,6 @@ count$total <- as.numeric(count$total)
 ### Remove duplicated rows based on declaracao_existencias
 count <- count %>% 
   distinct(declaracao_existencias, .keep_all = TRUE)
-
 
 ## Map
 ### Add column with label 
@@ -840,7 +840,13 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 
 # 4. Ensaios Laboratoriais
-##Avaliar nº positivos a DA / total de animais amostrados por SVL ou por laboratório;
+## Evaluate % of positive animals among total sampled animals by SVL / laboratory
+
+### Remove NA values
+
+controlos_laboratoriais <- na.omit(controlos)
+controlos$resultados_positivos <- as.numeric(as.character(unlist(controlos$resultados_positivos)))
+
 ##Evolução do nº de resultados positivos / nº animais amostrados ao longo do tempo (geom_line);
 
 
@@ -851,7 +857,6 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 
 # 5. Vaccination
-
 ## Vaccinated animals by production class and status over the years
 ### Select rows of interest
 vaccination_data <- vacinacoes %>% 
@@ -864,13 +869,27 @@ colnames(vaccination_data)[2] <- "exploracao_id"
 ### Only with results between 2016 and 2020
 vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01-01" & vaccination_data$data < "2020-12-31")
 
+### Remove NA values
+vaccination_data <- na.omit(vaccination_data)
+
+
+
+
+
+
+
+##### HELP
 ## Number of vaccinated animals per production class by year
 ### Add status column to our data
-vaccination_status <- merge(x = vaccination_data, y = status, by = "exploracao_id", all.x = TRUE)
+vaccination_status <- merge.data.frame(x = vaccination_data, y = status, by.x = "exploracao_id", by.y = "exploracao_id", all.x = TRUE)
 
 vaccination_production_status <- vaccination_status %>% 
-  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe) %>%
-  arrange(year, exploracao_id)
+  select(classificacao_sanitaria, data.x, exploracao_id, classe_controlo, vacinados_classe)
+
+## Add year column
+vaccination_production_status$year <- as.Date(vaccination_production_status$data.x, format = "%Y")
+vaccination_production_status$year <- format(as.Date(vaccination_production_status$year, format = "%Y-%m-%d"), "%Y")
+
 
 ### Group by status, year and production classes
 vaccination_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$classificacao_sanitaria, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
@@ -891,9 +910,6 @@ vaccination_production_year$production <- replace(vaccination_production_year$pr
 vaccination_production_year$year <- as.Date(vaccination_production_year$year, format = "%Y")
 vaccination_production_year$year <- format(as.Date(vaccination_production_year$year, format = "%Y-%m-%d"), "%Y")
 
-### Remove NA values
-vaccination_production_year <- na.omit(vaccination_production_year)
-
 ### Prepare for graph
 vaccination_production_year <- vaccination_production_year %>% 
   group_by(year) %>%
@@ -905,7 +921,7 @@ vaccination_graph <- ggplot(vaccination_production_year,
                             aes(x = status, y = count, fill = reorder(production, count), group = position)) + 
   geom_bar(position = "stack", stat = "identity", aes(text = paste0(count, "<br>", " animals"))) + 
   facet_wrap(~year) +
-  scale_y_continuous(trans = "log2") +
+  scale_y_continuous(trans = "log10") +
   coord_flip() + 
   theme_bw() +
   labs( title = "Number of animals vaccinated by production type in each status over the years", size = 20,
@@ -932,16 +948,29 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
       ## tentar resolver a apresentação de texto do eixo x e interactividade
 
 
+
+
+
 ## Percentage of vaccinated animals by status and production class in 2019
 #### Select only 2019 data
 vaccination_2019 <- vaccination_production_status %>% 
-  filter(year == "2019")
+  filter(year == "2019") %>%
+  na.omit(vaccination_2019)
 
 ## Remove A0 and SC status
 vaccination_2019 <- as.data.frame(vaccination_2019[!vaccination_2019$classificacao_sanitaria == "A0" & !vaccination_2019$classificacao_sanitaria == "SC",])
 
-### Add percentage of vaccinated animals in 2020
-#### Select only 2020 count and status values
+vaccination_2019$vacinados_classe <- as.numeric(vaccination_2019$vacinados_classe)
+
+## Group vaccinated animals per status
+vaccination_2019_status <- aggregate(vaccination_2019, by=list(vaccination_2019$classificacao_sanitaria, vaccination_2019$vacinados_classe), FUN = sum)
+vaccination_2019_status <- as.data.frame(aggregate(vaccination_2019$vacinados_classe , by = list(vaccination_2019$classificacao_sanitaria), FUN = sum))
+
+names(status_last_production) <- c("exploracao_id", "year", "production", "status")
+
+
+
+#### Select only 2020 count and status counts
 count_19 <- count %>%
   filter(data > "2018-12-31" & data < "2020-01-01")
 
@@ -951,13 +980,30 @@ status_19 <- status %>%
 #### Number of animals by production class and status in 2020
 count_status <- merge(x = count_19, y = status_19, by.x = "exploracao", by.y = "exploracao_id", all.x = TRUE, all.y = TRUE)
 
+#### Remove NA values, SC and A0
+count_status <- na.omit(count_status)
+count_status <- as.data.frame(count_status[!count_status$classificacao_sanitaria == "A0" & !count_status$classificacao_sanitaria == "SC",])
+
+#### Change to date format to arrange by data and farm id's --- ARRANGE NÃO RESULTA
+count_status$data.y <- as.Date(count_status$data.y, format = "%Y-%m-%d")
+
+count_status <- count_status %>% 
+  arrange(data.y)
+
+#### Select the last status of each farm -- NÃO ESTÁ A FUNCIONAR ESCOLHER O ÚLTIMO STATUS DE CADA EXPLORAÇÃO
 
 
+count_last_status <- aggregate(count_status$classificacao_sanitaria, by=list(count_status$exploracao, count_status$contagem), FUN=last)
+names(status_last_production) <- c("exploracao_id", "year", "production", "status")
 
+
+#### Arrange counts per status 
+count_status <- count_status %>%
+  select(data)
 
 
 ### Percentage of vaccinated animals
-vaccination_2019$percentage <- vaccination_2019$count / sum(vaccination_2019$count) *100
+vaccination_2019$percentage <- vaccination_2019$count / sum(vaccination_2019$count) * 100
 vaccination_2019$percentage <- round(vaccination_2019$percentage, digits = 5)
 
 
@@ -997,8 +1043,9 @@ vaccination_production_status <- na.omit(vaccination_production_status)
 
 
 ### Add column with the month
-slaughter_2019_month$month <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
-slaughter_2019_month$m <- as.Date(slaughter_2019_month$data_de_entrada, format = "%m")
+vaccination_2019$month <- as.Date(vaccination_2019$data_de_entrada, format = "%m")
+vaccination_2019$m <- as.Date(vaccination_2019)
+
 slaughter_2019_month$month <- format(as.Date(slaughter_2019_month$month, format = "%Y-%m-%d"), "%m")
 slaughter_2019_month$m <- format(as.Date(slaughter_2019_month$m, format = "%Y-%m-%d"), "%B")
 
@@ -1010,8 +1057,6 @@ vaccination_production_status %>%
   geom_density(alpha = 0.3, bw=0.5, position = "stack") + 
   scale_fill_brewer(palette="Dark2") +
   scale_x_continuous(trans = "log2")
-
-
 
 
 ## Geomline 
