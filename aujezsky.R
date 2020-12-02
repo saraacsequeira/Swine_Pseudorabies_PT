@@ -881,7 +881,11 @@ vaccination_data <- na.omit(vaccination_data)
 ##### HELP
 ## Number of vaccinated animals per production class by year
 ### Add status column to our data
-vaccination_status <- merge.data.frame(x = vaccination_data, y = status, by.x = "exploracao_id", by.y = "exploracao_id", all.x = TRUE)
+status_last <- status %>%
+  group_by(exploracao_id) %>%
+  slice(which.max(as.Date(data, "%Y-%m-%d")))
+
+vaccination_status <- merge(vaccination_data, status_last, by.x = "exploracao_id", by.y = "exploracao_id", all.x = TRUE, all.y = FALSE)
 
 vaccination_production_status <- vaccination_status %>% 
   select(classificacao_sanitaria, data.x, exploracao_id, classe_controlo, vacinados_classe)
