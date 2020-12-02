@@ -5,6 +5,7 @@ library(RMySQL)
 library(dplyr)
 library(data.table)
 library(tidyr)
+library(tidyverse)
 library(devtools)
 library(lubridate)
 library(ggplot2)
@@ -21,6 +22,7 @@ library(scales)
 library(rgdal)
 library(hrbrthemes)
 library(sf)
+
 
 
 # Connection with MySQL database
@@ -122,6 +124,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
               palette = "inferno", 
               auto_highlight = TRUE)
+
 
 
 
@@ -1096,13 +1099,41 @@ murders %>% mutate(rate = total/population*100000) %>%
 
 
 
-
 ## Vaccinated animals by LVS (mapa)
 
 
 ## See if vaccination intervals are accourdingly to the plan for each status/ production class (pie chart?)
 ###Verificação de cumprimento de prazos. 
 
+
+
+# Map with contingency areas
+## Table
+contingency <- unique(contingencias)
+
+### Convert geometry to sfc
+contingency$geometria <- st_as_sfc(contingency$geometria, crs = NA_integer_, GeoJSON = FALSE)
+
+### Convert table to sf dataframe
+contingency <- st_as_sf(contingency)
+
+### Add label column
+contingency$info <- paste0(contingency$exploracao, " - ", contingency$fase, "<br>", contingency$designacao)
+
+### Add colour column
+colourvalues::colour_values(c(1:100),palette = "rainbow")
+contingency$colour <- c("#FF4D00FF", "#00EBFFFF", "#FF0034FF")
+
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = contingency,
+              layer_id = "polygon_layer",
+              fill_colour = "colour",
+              legend = TRUE,
+              tooltip = "info", 
+              palette = "rainbow", 
+              auto_highlight = TRUE,
+              legend_options = list(fill_colour = list(title = "Farms under surveillance")))
 
 
 
