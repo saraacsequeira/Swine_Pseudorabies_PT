@@ -842,10 +842,32 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 # 4. Ensaios Laboratoriais
 ## Evaluate % of positive animals among total sampled animals by SVL / laboratory
 
-### Remove NA values
-
+### Remove NA values and other formats to numeric
 controlos_laboratoriais <- na.omit(controlos)
-controlos$resultados_positivos <- as.numeric(as.character(unlist(controlos$resultados_positivos)))
+
+controlos_laboratoriais$resultados_positivos <- as.numeric(as.character(unlist(controlos_laboratoriais$resultados_positivos)))
+
+controlos_laboratoriais$resultados_positivos <- as.numeric(controlos_laboratoriais$resultados_positivos)
+controlos_laboratoriais$animais_amostrados <- as.numeric(controlos_laboratoriais$animais_amostrados)
+
+### Select data of interest
+controlos_laboratoriais <- controlos_laboratoriais %>%
+  select(data_rececao_laboratorio, exploracoes_marca, resultados_positivos, animais_amostrados, classe) %>%
+  # New variable with % positive animals among total sampled
+  mutate(percent_positive = resultados_positivos / animais_amostrados * 100)
+
+### Remove NaN values (0 positive / 0 sampled)
+controlos_laboratoriais <- na.omit(controlos_laboratoriais)
+
+### Remove infinite values (1 positive or more / 0 sampled)
+controlos_laboratoriais <- controlos_laboratoriais %>% 
+  filter_if(~is.numeric(.), all_vars(!is.infinite(.)))
+
+### Change percentage values (only 2 digits)
+controlos_laboratoriais$percent_positive <- round(controlos_laboratoriais$percent_positive, digits = 2)
+
+
+
 
 ##Evolução do nº de resultados positivos / nº animais amostrados ao longo do tempo (geom_line);
 
@@ -871,12 +893,6 @@ vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01
 
 ### Remove NA values
 vaccination_data <- na.omit(vaccination_data)
-
-
-
-
-
-
 
 ##### HELP
 ## Number of vaccinated animals per production class by year
@@ -991,8 +1007,6 @@ count_status <- count_status %>%
   arrange(data.y)
 
 #### Select the last status of each farm -- NÃO ESTÁ A FUNCIONAR ESCOLHER O ÚLTIMO STATUS DE CADA EXPLORAÇÃO
-
-
 count_last_status <- aggregate(count_status$classificacao_sanitaria, by=list(count_status$exploracao, count_status$contagem), FUN=last)
 names(status_last_production) <- c("exploracao_id", "year", "production", "status")
 
