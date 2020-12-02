@@ -17,6 +17,7 @@ connection <- dbConnect(RMariaDB :: MariaDB(),
                         password = "projetoporcos")
 # Directory
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
+setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
 
 # Read table from MYSQL
 freguesias <- dbReadTable(connection, "st_tabela_freguesias")
