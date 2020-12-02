@@ -1122,18 +1122,24 @@ contingency$info <- paste0(contingency$exploracao, " - ", contingency$fase, "<br
 
 ### Add colour column
 colourvalues::colour_values(c(1:100),palette = "rainbow")
-contingency$colour <- c("#FF4D00FF", "#00EBFFFF", "#FF0034FF")
+contingency$colour <- c("#FF7C00FF", "#00BCFFFF", "#FF0072FF")
+
+### Manual legend
+leg <- legend_element(variables = c("PTRG47B", "PTWX90H", "PTWX93C"),
+                      colours = c("#FF7C00FF", "#00BCFFFF", "#FF0072FF"),
+                      colour_type = "fill", 
+                      variable_type = "category", 
+                      title = "Farms under surveillance")
+leg <- mapdeck_legend(leg)
 
 ## Mapdeck
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
   add_polygon(data = contingency,
               layer_id = "polygon_layer",
               fill_colour = "colour",
-              legend = TRUE,
+              legend = leg,
               tooltip = "info", 
-              palette = "rainbow", 
-              auto_highlight = TRUE,
-              legend_options = list(fill_colour = list(title = "Farms under surveillance")))
+              auto_highlight = TRUE)
 
 
 
