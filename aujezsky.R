@@ -50,7 +50,7 @@ contingencias <- dbReadTable(connection, "st_tabela_contingencias")
 
 # 1 - PIG FARM'S DISTRIBUTION
 
-## 1.1 - Pig farm's distribution by LVS (local veterinary service)
+# 1.1 - Pig farm's distribution by LVS (local veterinary service)
 
 ## Table with total of animals by LVS
 count_svl <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$svl), FUN = sum))
@@ -64,7 +64,7 @@ count_svl_total$total <- as.numeric(count_svl_total$total)
 ### Remove scientific notation
 options(scipen=999)
 
-## Plot with total number of animals by LVS
+## 1.1.1. Plot with total number of animals by LVS
 count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
   geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
   coord_flip() + 
@@ -72,8 +72,7 @@ count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = 
   theme(legend.position = "none") +
   labs( title = "Number of animals by LVS", size = 15,
         y = "Number of animals",
-        x = "Local Veterinary Service", 
-        caption = "Fonte: DGAV")
+        x = "Local Veterinary Service")
 
 ## Interactive Graph
 ggplotly(count_svl_total_graph, tooltip = "text") %>% 
@@ -84,11 +83,12 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
-## Map with animals' distribution by LVS
+## 1.1.2. Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
+
 ### Azores all in one
 pt_lvs_map <- pt_lvs_map %>%
   group_by(svl) %>%
@@ -126,9 +126,75 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               auto_highlight = TRUE)
 
 
+# 1.2 - Pig farm's distribution by FVRD (food and veterinary regional directorate)
+## Table with total of animals by FVRD
+count_fvrd <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$classe_produtiva, contagens$dsavr), FUN = sum))
+count_fvrd <- count_fvrd %>% arrange(Group.2, Group.1)
+names(count_fvrd) <- c("class", "fvrd", "count")
+
+count_fvrd_total <- as.data.frame(aggregate(count_fvrd$count, by = list(count_fvrd$fvrd), FUN = sum))
+names(count_fvrd_total) <- c("fvrd", "total")
+count_fvrd_total$total <- as.numeric(count_fvrd_total$total)
+
+### Remove scientific notation
+options(scipen=999)
+
+## 1.2.1. Plot with total number of animals by FVRD
+count_fvrd_total_graph <- ggplot(count_fvrd_total, aes(x = fvrd, y = total, fill = fvrd)) + 
+  geom_bar(stat = "identity", aes(text = paste0(fvrd, "<br>", total, " animals"))) + 
+  coord_flip() + 
+  theme_light() +
+  theme(legend.position = "none") +
+  labs( title = "Number of animals by FVRD", size = 15,
+        y = "Number of animals",
+        x = "Food and Veterinary Regional Directorate")
+
+## Interactive Graph
+ggplotly(count_fvrd_total_graph, tooltip = "text") %>% 
+  layout(yaxis = list(title = paste0(c(rep("&nbsp;", 30),
+                                       "Food and Veterinary Regional Directorate",
+                                       rep("&nbsp;", 30),
+                                       rep("\n&nbsp;", 2)),
+                                     collapse = "")),
+         legend = list(x = 1, y = 0))
+
+## 1.2.2. Map with animals' distribution by LVS
+### Read map
+setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
+setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
+pt_fvrd_map <- read_sf("pt_fvrd_map")
+
+### Azores all in one
+pt_fvrd_map <- pt_fvrd_map %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
+### Merge map with count by LVS
+count_fvrd_map <- merge(count_fvrd_total, pt_fvrd_map, by.x = "fvrd", by.y = "dsavr", all.x = TRUE, all.y = TRUE)
+
+### Add column with label
+count_fvrd_map$info <- paste0(count_fvrd_map$fvrd, "<br>", count_fvrd_map$total, " animals")
+
+### Total as numeric
+count_fvrd_map$total <- as.numeric(count_fvrd_map$total)
+
+### Convert to sf
+count_fvrd_map <- st_as_sf(count_fvrd_map)
 
 
-# 1.2 - Number of animals by farm 
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = count_fvrd_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "fvrd",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
+              palette = "rainbow_hcl", 
+              auto_highlight = TRUE)
+
+
+# 1.3 - Number of animals by farm 
 ## Table with total animals
 contagens$contagem <- as.numeric(contagens$contagem)
 count <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$declaracao_existencias), FUN = sum))
@@ -174,7 +240,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 
 
 
-# 1.2.1 - Percentage of animals by class by LVS
+# 1.3.1 - Percentage of animals by class by LVS
 ## Table with percentage of animals by class by LVS
 count_svl <- as.data.frame(merge(count_svl, count_svl_total, by.x = "svl", by.y = "svl"))
 names(count_svl)[4] <- "total"
@@ -206,7 +272,7 @@ ggplotly(count_svl_graph, tooltip = "text") %>%
          legend = list(x = 1, y = 0))
 
 
-# 1.3 Percentage of pig farms currently classified (in general and farm specified)
+# 1.4 Percentage of pig farms currently classified (in general and farm specified)
 ## Selecting specific columns
 class <- as.data.frame(merge(contagens, classificacoes, by.x = "exploracao", by.y = "exploracao_id")) %>% 
   select(data.y, exploracao, longitude, latitude, svl, classificacao_sanitaria)
@@ -256,13 +322,8 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
                   palette = "spectral")
 
-## Map - percentage of status by SVL (in 2020) 
 
 
-
-
-
-# → Tabela da prevalência, usar de alguma forma!!
 
 # 2. Farms' status overview;
 # 2.1 Farms' status by production type over the years
@@ -613,7 +674,7 @@ ggplotly(status_percent_graph, tooltip = "text") %>%
 
 
 # 3. Slaughters
-# 3.1.1 Number of animals slaughtered by farm in 2019
+# 3.1 Number of animals slaughtered by farm in 2019
 ## Table with animals slaughtered by farm in 2019
 ### Change date format
 animais_abatidos$data_de_entrada <- strftime(animais_abatidos$data_de_entrada, format = "%Y-%m-%d")
@@ -650,11 +711,6 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals slaughtered by farm in 2019")),
                   palette = "heat_hcl")
-
-
-
-# 3.1.2 Number of animals slaughtered by SVL in 2019
-
 
 
 # 3.2 Principal itineraries to the slaughterhouses in 2019
@@ -743,7 +799,7 @@ names(slaughter_dsavr) <- c("dsavr", "count")
 slaughter_dsavr$count <- as.numeric(slaughter_dsavr$count)
 
 
-## Plot with number of animals slaughtered by FVRD
+## 3.4.1 Plot with number of animals slaughtered by FVRD
 dsavr_graph <- ggplot(slaughter_dsavr, aes(x = dsavr, y = count, color = dsavr)) + 
   theme_light() + 
   theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0.5)) + 
@@ -765,8 +821,35 @@ ggplotly(dsavr_graph, tooltip = "text") %>%
                                     collapse = "")))
 
 
+## 3.4.2 Map with number of animals slaughtered by FVRD
+### Merge table with map
+slaughter_fvrd_map <- merge(slaughter_dsavr, pt_fvrd_map, by.x = "dsavr", by.y = "dsavr", all = TRUE)
+
+### Add column with label
+slaughter_fvrd_map$info <- paste0(slaughter_fvrd_map$dsavr, "<br>", slaughter_fvrd_map$count, " animals slaughtered")
+
+### Total as numeric
+slaughter_fvrd_map$count <- as.numeric(slaughter_fvrd_map$count)
+
+### Convert to sf
+slaughter_fvrd_map <- st_as_sf(slaughter_fvrd_map)
+
+
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = slaughter_fvrd_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "dsavr",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
+              palette = "rainbow_hcl", 
+              auto_highlight = TRUE)
+
+
+
 # 3.5 Animals slaughtered by LVS in 2019
-## Table with animals slaughtered in each FVRD in 2019
+## Table with animals slaughtered in each LVS in 2019
 slaughter_lvs <- merge(slaughter_2019, exploracoes, by.x = "exploracao", by.y = "exploracao", all.x = TRUE, all.y = FALSE)
 
 ### Remove farms without FVRD info
@@ -779,7 +862,28 @@ slaughter_lvs <- slaughter_lvs %>%
 names(slaughter_lvs) <- c("svl", "count")
 slaughter_lvs$count <- as.numeric(slaughter_lvs$count)
 
-## Merge with map
+## 3.5.1 Plot with number of animals slaughtered by LVS
+lvs_graph <- ggplot(slaughter_lvs, aes(x = svl, y = count, color = svl)) + 
+  theme_light() + 
+  theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0.5)) + 
+  geom_point(size = 2, aes(text = paste0(svl, "<br>", count, " animals slaughtered")), show.legend = TRUE) + 
+  geom_segment(aes(x = svl, xend = svl,  y = 0, yend = count), linetype = "dotted", color = "black") +
+  labs(title = "Number of animals slaughtered in each \n Local Veterinary Service during 2019",
+       x = " ", 
+       y = " ", 
+       color = " ")
+
+## Interactive graph
+ggplotly(lvs_graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of animals slaughtered",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")))
+
+
+## 3.5.2 Map with number of animals slaughtered by LVS
+### Merge with map
 slaughter_lvs_map <- merge(slaughter_lvs, pt_lvs_map, by.x = "svl", by.y = "svl", all = TRUE)
 
 ### Add column with label
