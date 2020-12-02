@@ -64,7 +64,7 @@ count_svl_total$total <- as.numeric(count_svl_total$total)
 ### Remove scientific notation
 options(scipen=999)
 
-## 1.1.1. Plot with total number of animals by LVS
+## 1.1.1 Plot with total number of animals by LVS
 count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
   geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
   coord_flip() + 
@@ -83,7 +83,7 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
-## 1.1.2. Map with animals' distribution by LVS
+## 1.1.2 Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
@@ -139,7 +139,7 @@ count_fvrd_total$total <- as.numeric(count_fvrd_total$total)
 ### Remove scientific notation
 options(scipen=999)
 
-## 1.2.1. Plot with total number of animals by FVRD
+## 1.2.1 Plot with total number of animals by FVRD
 count_fvrd_total_graph <- ggplot(count_fvrd_total, aes(x = fvrd, y = total, fill = fvrd)) + 
   geom_bar(stat = "identity", aes(text = paste0(fvrd, "<br>", total, " animals"))) + 
   coord_flip() + 
@@ -158,7 +158,7 @@ ggplotly(count_fvrd_total_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
-## 1.2.2. Map with animals' distribution by LVS
+## 1.2.2 Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
