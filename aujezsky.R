@@ -187,7 +187,7 @@ count_svl$percentage <- round(count_svl$percentage, digits = 2)
 ## Plot with percentage of animals by class in each LVS
 count_svl_graph <- ggplot(count_svl, aes(fill = class, y = percentage, x = svl)) + 
   geom_bar(position = "fill", stat = "identity", aes(text = paste0(percentage, "%"))) +
-  theme_light() +
+  theme_ipsum() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_fill_brewer(palette = "Set2", labels = c("Weaners", "Piglets", "Sows", "Pigs", "Boars")) +
   labs( title = "Percentage of animals in each class by LVS", size = 15,
@@ -298,24 +298,18 @@ status_by_year_graph <- ggplot(status_by_year, aes(x = year, y = count, fill = s
   geom_bar(stat = "identity", position = "dodge", aes(text = paste('Year: ', year,
                                                                    '<br>Status: ', status,
                                                                    '<br>Nr. of Farms: ', count))) + 
-  theme_light() +
-  theme() +
+  theme_ipsum() +
   scale_y_continuous(expand = c(0, 0)) +
   coord_cartesian(ylim = c(0, max(status_by_year$count + 500))) +
-  
   scale_fill_brewer(palette = "Set3") + 
   labs( title = "Number of farms per status over the years", size = 15,
         y = "Number of farms",
         x = "Year", 
         caption = "Fonte: DGAV") +
-  theme(legend.title = element_blank(),
-        axis.title.x = element_text(size = 12),
-        axis.text.x = element_text(size=8, 
-                                   color = "black"),
-        axis.text.y = element_text(size=10,
-                                   color = "black")) +
-  guides(fill=guide_legend(title="Status"))
-
+  theme(axis.title = element_text(size = 12),
+        legend.title = element_blank(),
+        axis.title.x = element_text(size = 9, hjust = 1),
+        axis.title.y = element_text(size = 9, vjust = 1))
 
 #Fazer gráfico interativo
 ggplotly(status_by_year_graph, tooltip = "text") %>% 
@@ -383,6 +377,29 @@ ggplotly(farms_production_graph, tooltip = "text") %>%
 
 
 # Line chart for each status
+## all in one
+graph <- ggplot(farms_production_status, aes(color = production, group = production, y = count, x = year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
+  facet_wrap(~status) +
+  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
+  scale_color_brewer(palette = "Accent") +
+  theme_ipsum() + 
+  theme() + 
+  ggtitle("Number of farms by type of production and status over the years") + 
+  labs(y = "Number of farms",
+       x = "Year",
+       color = " ")
+
+### A1 Interactive graph
+ggplotly(graph, tooltip = "text") %>%
+  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
+                                      "Number of farms",
+                                      rep("&nbsp;", 30),
+                                      rep("\n&nbsp;", 2)),
+                                    collapse = "")),
+         legend = list(x = 1, y = 0))
+
 ## A1 ggplot
 a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
 
@@ -391,7 +408,7 @@ a1_graph <- ggplot(a1, aes(color = production, group = production, y = count, x 
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme() + 
   ggtitle("A1 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -407,6 +424,7 @@ ggplotly(a1_graph, tooltip = "text") %>%
                                     collapse = "")),
          legend = list(x = 1, y = 0))
 
+
 ## A2 ggplot
 a2 <- farms_production_status %>% filter(farms_production_status$status == "A2")
 
@@ -415,7 +433,7 @@ a2_graph <- ggplot(a2, aes(color = production, group = production, y = count, x 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -440,7 +458,7 @@ a2a_graph <- ggplot(a2a, aes(color = production, group = production, y = count, 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2A Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -464,7 +482,7 @@ a2na_graph <- ggplot(a2na, aes(color = production, group = production, y = count
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A2NA Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -489,7 +507,7 @@ a3_graph <- ggplot(a3, aes(color = production, group = production, y = count, x 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A3 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -513,7 +531,7 @@ a4_graph <- ggplot(a4, aes(color = production, group = production, y = count, x 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A4 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -537,7 +555,7 @@ a5_graph <- ggplot(a5, aes(color = production, group = production, y = count, x 
   scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
   geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
   scale_color_brewer(palette = "Accent") +
-  theme_pubclean() + 
+  theme_ipsum() + 
   theme(legend.position = "bottom") + 
   ggtitle("A5 Status - Number of farms by type of production over the years") + 
   labs(y = "Number of farms",
@@ -576,7 +594,7 @@ status_percent_graph <- ggplot(status_percentage, aes(x = status, y = percentage
   geom_point(size = 5, aes(text = label)) + 
   geom_segment(aes(x = status,xend = status,  y = 0, yend = percentage), linetype = "dotted", color = "grey60") +
   scale_color_brewer(palette = "Set3") +
-  theme_minimal() + 
+  theme_ipsum() + 
   theme(legend.position = "right") + 
   ggtitle("Percentage of farms by status") + 
   labs(caption = "Fonte: DGAV",
@@ -842,8 +860,8 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 
 
-# 4. Ensaios Laboratoriais
-## Evaluate % of positive animals among total sampled animals by SVL / laboratory
+# 4. Laboratory Tests
+## 4.1. Number of animals sampled over time
 
 ### Remove NA values and other formats to numeric
 controlos_laboratoriais <- na.omit(controlos)
@@ -854,8 +872,38 @@ controlos_laboratoriais$resultados_positivos <- as.numeric(controlos_laboratoria
 controlos_laboratoriais$animais_amostrados <- as.numeric(controlos_laboratoriais$animais_amostrados)
 
 ### Select data of interest
+controlos_laboratoriais2 <- controlos_laboratoriais %>%
+  select(data_rececao_laboratorio, exploracoes_marca, resultados_positivos, animais_amostrados, classe) 
+
+## Geom_area with the number of sampled animals over time (since they started sampling)
+samples_graph <- ggplot(controlos_laboratoriais2, aes(x=data_rececao_laboratorio, y=animais_amostrados, fill=classe)) + 
+  geom_area(alpha=.5, size=.9, aes(text = paste('Date: ', data_rececao_laboratorio,
+                                                '<br>Nº Sampled Animals: ', animais_amostrados,
+                                                '<br>Production Class: ', classe))) + 
+  scale_fill_brewer(palette = "Dark2") +
+
+  theme_ipsum() + 
+  ggtitle("Number of sampled animals over time") +
+  theme(axis.title = element_text(size = 15),
+        legend.title = element_blank(),
+        axis.title.x = element_text(size = 9, hjust = 1),
+        axis.title.y = element_text(size = 9, vjust = 1)) +
+  labs(x = "Laboratory reception date", 
+       y = "Nº sampled animals") +
+  geom_vline(aes(xintercept=mean(animais_amostrados)),
+             color="blue", linetype="dashed", size=2)
+
+#Tornar gráfico interativo
+ggplotly(samples_graph, tooltip = "text") %>% 
+  layout(legend = list(x = 1, y = 0))
+
+
+## 4.2. Evaluate % of positive animals among total sampled animals by SVL / laboratory
+
 controlos_laboratoriais <- controlos_laboratoriais %>%
-  select(data_rececao_laboratorio, exploracoes_marca, resultados_positivos, animais_amostrados, classe) %>%
+  select(data_rececao_laboratorio, longitude, latitude, svl, exploracoes_marca, classe, resultados_positivos, animais_amostrados) %>%
+  # New variable with positive animals among total sampled
+  mutate(ratio_positive = resultados_positivos / animais_amostrados) %>%
   # New variable with % positive animals among total sampled
   mutate(percent_positive = resultados_positivos / animais_amostrados * 100)
 
@@ -866,13 +914,32 @@ controlos_laboratoriais <- na.omit(controlos_laboratoriais)
 controlos_laboratoriais <- controlos_laboratoriais %>% 
   filter_if(~is.numeric(.), all_vars(!is.infinite(.)))
 
-### Change percentage values (only 2 digits)
-controlos_laboratoriais$percent_positive <- round(controlos_laboratoriais$percent_positive, digits = 2)
+### Change values (only 2 digits)
+controlos_laboratoriais[,9:10] <- round(controlos_laboratoriais[,9:10], digits = 2)
+
+## Plot with percentage of animals by class in each LVS
+percent_samples_graph <- ggplot(controlos_laboratoriais, aes(fill = classe, y = percent_positive, x = svl)) + 
+  geom_bar(position = "fill", stat = "identity", aes(text = paste0(percent_positive, "%"))) +
+  theme_ipsum() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = "Set2", labels = c("Fattening", "Breeding", "Replacement")) +
+  labs( title = "Percentage of vaccinated animals in each production class by LVS", size = 15,
+        y = "Percentage",
+        x = "Local Veterinary Service", 
+        caption = "Fonte: DGAV",
+        fill = "")
+
+##Interactive graph
+ggplotly(percent_samples_graph, tooltip = "text") %>% 
+  layout(legend = list(x = 1, y = 0))
 
 
 
 
-##Evolução do nº de resultados positivos / nº animais amostrados ao longo do tempo (geom_line);
+
+
+## 4.3. Positive samples per status over time (geom_line/point)
+
 
 
 
