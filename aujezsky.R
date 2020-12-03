@@ -1060,20 +1060,20 @@ vaccination_data <- na.omit(vaccination_data)
 
 ##### HELP
 ## Number of vaccinated animals per production class by year
-### Add status column to our data
+### Select the last status on each year 
 status_last <- status %>%
-  group_by(exploracao_id) %>%
+  group_by(exploracao_id, year) %>%
   slice(which.max(as.Date(data, "%Y-%m-%d")))
 
-vaccination_status <- merge(vaccination_data, status_last, by.x = "exploracao_id", by.y = "exploracao_id", all.x = TRUE, all.y = FALSE)
+### Add column with year to vaccination table
+vaccination_data$year <- as.Date(vaccination_data$data, format = "%Y")
+vaccination_data$year <- format(as.Date(vaccination_data$year, format = "%Y-%m-%d"), "%Y")
 
-vaccination_production_status <- vaccination_status %>% 
-  select(classificacao_sanitaria, data.x, exploracao_id, classe_controlo, vacinados_classe)
+### Merge the 2 tables
+vaccination_status <- merge(vaccination_data, status_last, by.x = c("exploracao_id", "year"), by.y = c("exploracao_id", "year"), all.x = TRUE, all.y = FALSE)
 
-## Add year column
-vaccination_production_status$year <- as.Date(vaccination_production_status$data.x, format = "%Y")
-vaccination_production_status$year <- format(as.Date(vaccination_production_status$year, format = "%Y-%m-%d"), "%Y")
-
+vaccination_status <- vaccination_status %>% 
+  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
 
 ### Group by status, year and production classes
 vaccination_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$classificacao_sanitaria, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))
