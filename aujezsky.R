@@ -64,7 +64,7 @@ count_svl_total$total <- as.numeric(count_svl_total$total)
 ### Remove scientific notation
 options(scipen=999)
 
-## 1.1.1. Plot with total number of animals by LVS
+## 1.1.1 Plot with total number of animals by LVS
 count_svl_total_graph <- ggplot(count_svl_total, aes(x = svl, y = total, fill = svl)) + 
   geom_bar(stat = "identity", aes(text = paste0(svl, "<br>", total, " animals"))) + 
   coord_flip() + 
@@ -83,16 +83,11 @@ ggplotly(count_svl_total_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
-## 1.1.2. Map with animals' distribution by LVS
+## 1.1.2 Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
-
-### Azores all in one
-pt_lvs_map <- pt_lvs_map %>%
-  group_by(svl) %>%
-  summarise(area = sum(area))
 
 ### Merge map with count by LVS
 count_lvs_map <- merge(count_svl_total, pt_lvs_map, by.x = "svl", by.y = "svl", all.x = TRUE, all.y = TRUE)
@@ -139,7 +134,7 @@ count_fvrd_total$total <- as.numeric(count_fvrd_total$total)
 ### Remove scientific notation
 options(scipen=999)
 
-## 1.2.1. Plot with total number of animals by FVRD
+## 1.2.1 Plot with total number of animals by FVRD
 count_fvrd_total_graph <- ggplot(count_fvrd_total, aes(x = fvrd, y = total, fill = fvrd)) + 
   geom_bar(stat = "identity", aes(text = paste0(fvrd, "<br>", total, " animals"))) + 
   coord_flip() + 
@@ -158,16 +153,11 @@ ggplotly(count_fvrd_total_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
 
-## 1.2.2. Map with animals' distribution by LVS
+## 1.2.2 Map with animals' distribution by LVS
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
-pt_fvrd_map <- read_sf("pt_fvrd_map")
-
-### Azores all in one
-pt_fvrd_map <- pt_fvrd_map %>%
-  group_by(dsavr) %>%
-  summarise(area = sum(area))
+pt_fvrd_map <- read_sf("pt_dsavr_map")
 
 ### Merge map with count by LVS
 count_fvrd_map <- merge(count_fvrd_total, pt_fvrd_map, by.x = "fvrd", by.y = "dsavr", all.x = TRUE, all.y = TRUE)
@@ -1095,20 +1085,20 @@ vaccination_data <- na.omit(vaccination_data)
 
 ##### HELP
 ## Number of vaccinated animals per production class by year
-### Add status column to our data
+### Select the last status on each year 
 status_last <- status %>%
-  group_by(exploracao_id) %>%
+  group_by(exploracao_id, year) %>%
   slice(which.max(as.Date(data, "%Y-%m-%d")))
 
-vaccination_status <- merge(vaccination_data, status_last, by.x = "exploracao_id", by.y = "exploracao_id", all.x = TRUE, all.y = FALSE)
+### Add column with year to vaccination table
+vaccination_data$year <- as.Date(vaccination_data$data, format = "%Y")
+vaccination_data$year <- format(as.Date(vaccination_data$year, format = "%Y-%m-%d"), "%Y")
 
-vaccination_production_status <- vaccination_status %>% 
-  select(classificacao_sanitaria, data.x, exploracao_id, classe_controlo, vacinados_classe)
+### Merge the 2 tables
+vaccination_status <- merge(vaccination_data, status_last, by.x = c("exploracao_id", "year"), by.y = c("exploracao_id", "year"), all.x = TRUE, all.y = FALSE)
 
-## Add year column
-vaccination_production_status$year <- as.Date(vaccination_production_status$data.x, format = "%Y")
-vaccination_production_status$year <- format(as.Date(vaccination_production_status$year, format = "%Y-%m-%d"), "%Y")
-
+vaccination_status <- vaccination_status %>% 
+  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
 
 ### Group by status, year and production classes
 vaccination_production_year <- as.data.frame(aggregate(vaccination_production_status$vacinados_classe, by = list(vaccination_production_status$classificacao_sanitaria, vaccination_production_status$year, vaccination_production_status$classe_controlo), FUN = sum))

@@ -201,55 +201,6 @@ ggplot(aze_geo_fvrd) + geom_sf()
 st_write(aze_geo_fvrd, dsn = "east_azores_dsavr_map", driver = "ESRI Shapefile")
 st_write(aze_geo_lvs, dsn = "east_azores_svl_map", driver = "ESRI Shapefile")
 
-###### FAZER TERMINATE R ########
-
-# CENTRAL AZORES MAP
-temp_dir <- tempdir()
-temp <- tempfile(tmpdir = temp_dir, fileext = ".zip")
-download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-RAA/ArqAcores_GCentral_AAd_CAOP2019.zip", destfile = temp)
-unzip(temp, exdir = temp_dir)
-
-## Table
-azc_geo <- read_sf(temp_dir)
-
-## Convert SRS to WGS84
-azc_geo <- st_as_sf(azc_geo, 4326)
-azc_geo <- st_transform(azc_geo, "+proj=longlat +datum=WGS84")
-
-### View map
-ggplot(azc_geo) + geom_sf()
-
-## Add column with area
-azc_geo$area <- st_area(azc_geo)
-
-## Remove last 2 digits from DICOFRE
-azc_geo$DICOFRE <- substr(azc_geo$DICOFRE, 1, nchar(azc_geo$DICOFRE) - 2)
-
-## Merge with concelho's table
-azc_geo_concelhos <- merge(azc_geo, concelhos, by.x = "DICOFRE", by.y = "dicofre", all.x = TRUE, all.y = FALSE)
-
-## Aggregate by LVS
-azc_geo_lvs <- azc_geo_concelhos %>%
-  group_by(svl) %>%
-  summarise(area = sum(area))
-
-### View map
-ggplot(azc_geo_lvs) + geom_sf()
-
-
-## Aggregate by FVRD
-azc_geo_fvrd <- azc_geo_concelhos %>%
-  group_by(dsavr) %>%
-  summarise(area = sum(area))
-
-### View geo 
-ggplot(azc_geo_fvrd) + geom_sf()
-
-
-## Export as SHP files
-st_write(azc_geo_fvrd, dsn = "central_azores_dsavr_map", driver = "ESRI Shapefile")
-st_write(azc_geo_lvs, dsn = "central_azores_svl_map", driver = "ESRI Shapefile")
-
 
 ###### FAZER TERMINATE R ########
 
@@ -395,6 +346,11 @@ islands_svl_map <- read_sf("islands_svl_map")
 ## Combine all in one 
 portugal_svl_map <- rbind(continent_svl_map, islands_svl_map)
 
+### Azores 3 in 1
+portugal_svl_map <- portugal_svl_map %>%
+  group_by(svl) %>%
+  summarise(area = sum(area))
+
 ## View map 
 ggplot(portugal_svl_map) + geom_sf()
 
@@ -410,8 +366,13 @@ islands_fvrd_map <- read_sf("islands_dsavr_map")
 ## Combine all in one 
 portugal_fvrd_map <- rbind(continent_fvrd_map, islands_fvrd_map)
 
+### Azores 3 in 1
+portugal_fvrd_map <- portugal_fvrd_map %>%
+  group_by(dsavr) %>%
+  summarise(area = sum(area))
+
 ## View map 
 ggplot(portugal_fvrd_map) + geom_sf()
 
 ## Export as SHP files
-st_write(portugal_fvrd_map, dsn = "pt_fvrd_map", driver = "ESRI Shapefile")
+st_write(portugal_fvrd_map, dsn = "pt_dsavr_map", driver = "ESRI Shapefile")
