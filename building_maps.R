@@ -372,4 +372,4 @@ portugal_fvrd_map <- portugal_fvrd_map %>%
 ggplot(portugal_fvrd_map) + geom_sf()
 
 ## Export as SHP files
-st_write(portugal_fvrd_map, dsn = "pt_fvrd_map", driver = "ESRI Shapefile")
+st_write(portugal_fvrd_map, dsn = "pt_dsavr_map", driver = "ESRI Shapefile")
