@@ -89,11 +89,6 @@ setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
 pt_lvs_map <- read_sf("pt_svl_map")
 
-### Azores all in one
-pt_lvs_map <- pt_lvs_map %>%
-  group_by(svl) %>%
-  summarise(area = sum(area))
-
 ### Merge map with count by LVS
 count_lvs_map <- merge(count_svl_total, pt_lvs_map, by.x = "svl", by.y = "svl", all.x = TRUE, all.y = TRUE)
 
@@ -162,12 +157,7 @@ ggplotly(count_fvrd_total_graph, tooltip = "text") %>%
 ### Read map
 setwd("C:/Users/teres/Desktop/EPIVET/DGAV - SISS/Swine_Pseudorabies_PT/maps")
 setwd("~/Desktop/Treino Estágio 2020-2021/Swine_Pseudorabies_PT/maps")
-pt_fvrd_map <- read_sf("pt_fvrd_map")
-
-### Azores all in one
-pt_fvrd_map <- pt_fvrd_map %>%
-  group_by(dsavr) %>%
-  summarise(area = sum(area))
+pt_fvrd_map <- read_sf("pt_dsavr_map")
 
 ### Merge map with count by LVS
 count_fvrd_map <- merge(count_fvrd_total, pt_fvrd_map, by.x = "fvrd", by.y = "dsavr", all.x = TRUE, all.y = TRUE)
