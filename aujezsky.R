@@ -122,7 +122,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               legend = TRUE,
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
-              palette = "inferno", 
+              palette = "bupu", 
               auto_highlight = TRUE)
 
 
@@ -143,7 +143,7 @@ options(scipen=999)
 count_fvrd_total_graph <- ggplot(count_fvrd_total, aes(x = fvrd, y = total, fill = fvrd)) + 
   geom_bar(stat = "identity", aes(text = paste0(fvrd, "<br>", total, " animals"))) + 
   coord_flip() + 
-  theme_light() +
+  theme_ipsum() +
   theme(legend.position = "none") +
   labs( title = "Number of animals by FVRD", size = 15,
         y = "Number of animals",
@@ -181,7 +181,6 @@ count_fvrd_map$total <- as.numeric(count_fvrd_map$total)
 ### Convert to sf
 count_fvrd_map <- st_as_sf(count_fvrd_map)
 
-
 ## Mapdeck
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
   add_polygon(data = count_fvrd_map,
@@ -189,7 +188,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               fill_colour = "fvrd",
               legend = TRUE,
               tooltip = "info",
-              legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
+              legend_options = list(fill_colour = list(title = "Number of animals by Food and Veterinary Regional Directorate")),
               palette = "rainbow_hcl", 
               auto_highlight = TRUE)
 
@@ -236,8 +235,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   tooltip = "info",
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals by farm")),
-                  palette = "inferno")
-
+                  palette = "bupu")
 
 
 # 1.3.1 - Percentage of animals by class by LVS
@@ -321,7 +319,6 @@ mapdeck(token = token, style = mapdeck_style("dark"), pitch = 20) %>%
                   layer_id = "point",
                   legend_options = list(fill_colour = list(title = "Sanitary Classification")),
                   palette = "spectral")
-
 
 
 
@@ -438,29 +435,6 @@ ggplotly(farms_production_graph, tooltip = "text") %>%
 
 
 # Line chart for each status
-## all in one
-graph <- ggplot(farms_production_status, aes(color = production, group = production, y = count, x = year)) +
-  geom_line(size = 1) +
-  geom_point(size = 2, aes(text = paste0(production, "<br>", count, " farms"))) + 
-  facet_wrap(~status) +
-  scale_y_continuous(breaks=(seq(0, 70, 10)), limits = c(0, 70)) +
-  scale_color_brewer(palette = "Accent") +
-  theme_ipsum() + 
-  theme() + 
-  ggtitle("Number of farms by type of production and status over the years") + 
-  labs(y = "Number of farms",
-       x = "Year",
-       color = " ")
-
-### A1 Interactive graph
-ggplotly(graph, tooltip = "text") %>%
-  layout(yaxis = list(title =paste0(c(rep("&nbsp;", 30),
-                                      "Number of farms",
-                                      rep("&nbsp;", 30),
-                                      rep("\n&nbsp;", 2)),
-                                    collapse = "")),
-         legend = list(x = 1, y = 0))
-
 ## A1 ggplot
 a1 <- farms_production_status %>% filter(farms_production_status$status == "A1")
 
@@ -710,7 +684,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   tooltip = "info",
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals slaughtered by farm in 2019")),
-                  palette = "heat_hcl")
+                  palette = "spectral")
 
 
 # 3.2 Principal itineraries to the slaughterhouses in 2019
@@ -744,7 +718,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
           stroke_to = "matadouro",
           stroke_width = "stroke",
           tooltip = "info",
-          palette = "viridis")
+          palette = "spectral")
 
 
 # 3.3 Geomline with the number of animals slaughtered over the year of 2019
@@ -769,7 +743,7 @@ month_graph <- ggplot(slaughter_2019_month, aes(x = month, y = count, color = m)
   geom_line(size = 0.5, color = "gray60") + 
   geom_point(size = 2, aes(text = paste0(m, " - ", count, " animals slaughtered"))) + 
   scale_color_brewer(palette = "Paired") + 
-  theme_light() + 
+  theme_ipsum() + 
   theme() + 
   ggtitle("Animals slaughtered over the year of 2019") + 
   labs(y = "Number of animals slaughtered",
@@ -801,7 +775,7 @@ slaughter_dsavr$count <- as.numeric(slaughter_dsavr$count)
 
 ## 3.4.1 Plot with number of animals slaughtered by FVRD
 dsavr_graph <- ggplot(slaughter_dsavr, aes(x = dsavr, y = count, color = dsavr)) + 
-  theme_light() + 
+  theme_ipsum() + 
   theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0.5)) + 
   geom_point(size = 5, aes(text = paste0(dsavr, "<br>", count, " animals slaughtered")), show.legend = TRUE) + 
   geom_segment(aes(x = dsavr, xend = dsavr,  y = 0, yend = count), linetype = "dotted", color = "black") +
@@ -842,7 +816,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               fill_colour = "dsavr",
               legend = TRUE,
               tooltip = "info",
-              legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
+              legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Food and Veterinary Regional Directorate")),
               palette = "rainbow_hcl", 
               auto_highlight = TRUE)
 
@@ -864,7 +838,7 @@ slaughter_lvs$count <- as.numeric(slaughter_lvs$count)
 
 ## 3.5.1 Plot with number of animals slaughtered by LVS
 lvs_graph <- ggplot(slaughter_lvs, aes(x = svl, y = count, color = svl)) + 
-  theme_light() + 
+  theme_ipsum() + 
   theme(axis.text.x = element_blank(), plot.title = element_text(hjust = 0.5)) + 
   geom_point(size = 2, aes(text = paste0(svl, "<br>", count, " animals slaughtered")), show.legend = TRUE) + 
   geom_segment(aes(x = svl, xend = svl,  y = 0, yend = count), linetype = "dotted", color = "black") +
@@ -908,7 +882,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               legend = TRUE,
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
-              palette = "heat_hcl", 
+              palette = "bupu", 
               auto_highlight = TRUE)
 
 
@@ -946,7 +920,7 @@ mean_slaughter_graph <- ggplot(mean_slaughter, aes(x = month, y = mean, color = 
   geom_line(size = 0.7) + 
   geom_point(size = 1.5, aes(text = paste0(year, "/", m, " - ", "mean of ", mean, " animals slaughtered"))) +
   scale_color_brewer(palette = "Dark2") + 
-  theme_light() + 
+  theme_ipsum() + 
   theme() + 
   ggtitle("Mean of daily slaughters in each month between 2016 and 2020") + 
   labs(y = "Number of animals slaughtered",
@@ -966,7 +940,6 @@ ggplotly(mean_slaughter_graph, tooltip = "text") %>%
 
 # 4. Laboratory Tests
 ## 4.1. Number of animals sampled over time
-
 ### Remove NA values and other formats to numeric
 controlos_laboratoriais <- na.omit(controlos)
 
@@ -975,17 +948,15 @@ controlos_laboratoriais$resultados_positivos <- as.numeric(as.character(unlist(c
 controlos_laboratoriais$resultados_positivos <- as.numeric(controlos_laboratoriais$resultados_positivos)
 controlos_laboratoriais$animais_amostrados <- as.numeric(controlos_laboratoriais$animais_amostrados)
 
-### Select data of interest
-controlos_laboratoriais2 <- controlos_laboratoriais %>%
-  select(data_rececao_laboratorio, exploracoes_marca, resultados_positivos, animais_amostrados, classe) 
+controlos_laboratoriais_graph <- controlos_laboratoriais %>%
+  select(data_rececao_laboratorio, animais_amostrados, classe)
 
 ## Geom_area with the number of sampled animals over time (since they started sampling)
-samples_graph <- ggplot(controlos_laboratoriais2, aes(x=data_rececao_laboratorio, y=animais_amostrados, fill=classe)) + 
+samples_graph <- ggplot(controlos_laboratoriais_graph, aes(x=data_rececao_laboratorio, y=animais_amostrados, fill=classe)) + 
   geom_area(alpha=.5, size=.9, aes(text = paste('Date: ', data_rececao_laboratorio,
                                                 '<br>Nº Sampled Animals: ', animais_amostrados,
                                                 '<br>Production Class: ', classe))) + 
   scale_fill_brewer(palette = "Dark2") +
-
   theme_ipsum() + 
   ggtitle("Number of sampled animals over time") +
   theme(axis.title = element_text(size = 15),
@@ -993,56 +964,110 @@ samples_graph <- ggplot(controlos_laboratoriais2, aes(x=data_rececao_laboratorio
         axis.title.x = element_text(size = 9, hjust = 1),
         axis.title.y = element_text(size = 9, vjust = 1)) +
   labs(x = "Laboratory reception date", 
-       y = "Nº sampled animals") +
-  geom_vline(aes(xintercept=mean(animais_amostrados)),
-             color="blue", linetype="dashed", size=2)
+       y = "Nº sampled animals")
 
 #Tornar gráfico interativo
 ggplotly(samples_graph, tooltip = "text") %>% 
   layout(legend = list(x = 1, y = 0))
 
 
-## 4.2. Evaluate % of positive animals among total sampled animals by SVL / laboratory
+## 4.2. Map number of positive animals in different LVS 
 
-controlos_laboratoriais <- controlos_laboratoriais %>%
-  select(data_rececao_laboratorio, longitude, latitude, svl, exploracoes_marca, classe, resultados_positivos, animais_amostrados) %>%
+## 1.1.2. Map with animals' distribution by LVS
+controlos_laboratoriais_map <- controlos_laboratoriais %>%
+  select(data_rececao_laboratorio, resultados_positivos, classe, svl)
+
+controlos_laboratoriais_map <- as.data.frame(aggregate(controlos_laboratoriais_map$resultados_positivos, 
+                                                       by = list(controlos_laboratoriais_map$svl), FUN = sum))
+names(controlos_laboratoriais_map) <- c("svl", "positive")
+
+### Merge map with positive animals by LVS
+positive_lvs_map <- merge(controlos_laboratoriais_map, pt_lvs_map, by = "svl", all = TRUE)
+
+### Add column with label
+positive_lvs_map$info <- paste0(positive_lvs_map$svl, "<br>", positive_lvs_map$positive, " animals tested positive;")
+
+### Define categories based on total animals
+positive_lvs_map$categoria <- cut(positive_lvs_map$positive, c(0,5,10,15,20,50,100))
+levels(positive_lvs_map$categoria) <- c("0;5", "5;10", "10;15", "15;20", "20;50", "50;100")
+
+### Convert to sf
+positive_lvs_map <- st_as_sf(positive_lvs_map)
+
+## Mapdeck
+mapdeck(token = token, style = mapdeck_style("dark")) %>%
+  add_polygon(data = positive_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "categoria",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of positive animals by Local Veterinary Service")),
+              palette = "bupu", 
+              auto_highlight = TRUE)
+
+
+## 4.3. Evaluate % of positive animals among total sampled animals by SVL / laboratory
+### Aggregate by svl
+agg_svl <- aggregate(list(controlos_laboratoriais$resultados_positivos, controlos_laboratoriais$animais_amostrados), by = list(controlos_laboratoriais$svl), sum)
+names(agg_svl) <- c("LVS", "positive_results", "total_sampled")
+
+controlos_laboratoriais_svl <- agg_svl %>%
   # New variable with positive animals among total sampled
-  mutate(ratio_positive = resultados_positivos / animais_amostrados) %>%
+  mutate(ratio_positive = positive_results / total_sampled) %>%
   # New variable with % positive animals among total sampled
-  mutate(percent_positive = resultados_positivos / animais_amostrados * 100)
-
-### Remove NaN values (0 positive / 0 sampled)
-controlos_laboratoriais <- na.omit(controlos_laboratoriais)
-
-### Remove infinite values (1 positive or more / 0 sampled)
-controlos_laboratoriais <- controlos_laboratoriais %>% 
-  filter_if(~is.numeric(.), all_vars(!is.infinite(.)))
-
+  mutate(percent_positive = positive_results / total_sampled * 100)
+  
 ### Change values (only 2 digits)
-controlos_laboratoriais[,9:10] <- round(controlos_laboratoriais[,9:10], digits = 2)
+controlos_laboratoriais_svl[,4:5] <- round(controlos_laboratoriais_svl[,4:5], digits = 2)
 
-## Plot with percentage of animals by class in each LVS
-percent_samples_graph <- ggplot(controlos_laboratoriais, aes(fill = classe, y = percent_positive, x = svl)) + 
-  geom_bar(position = "fill", stat = "identity", aes(text = paste0(percent_positive, "%"))) +
+### Geom_bar with vaccinated animal percentages by Local Veterinary Service
+svl_percentage_graph <- ggplot(controlos_laboratoriais_svl, aes(x = LVS, y = percent_positive, fill = LVS)) + 
+  geom_bar(stat = "identity", aes(text = paste0(LVS, "<br>", percent_positive, " % positive"))) + 
+  coord_flip() + 
   theme_ipsum() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_fill_brewer(palette = "Set2", labels = c("Fattening", "Breeding", "Replacement")) +
-  labs( title = "Percentage of vaccinated animals in each production class by LVS", size = 15,
+  theme(legend.position = "none") +
+  labs( title = "Percentage of vaccinated animals between sampled animals by LVS", size = 15,
         y = "Percentage",
-        x = "Local Veterinary Service", 
-        caption = "Fonte: DGAV",
-        fill = "")
+        x = "Local Veterinary Service") +
+  scale_y_continuous(limits = c(0,1))
 
-##Interactive graph
-ggplotly(percent_samples_graph, tooltip = "text") %>% 
+### Interactive Graph
+ggplotly(svl_percentage_graph, tooltip = "text") %>% 
   layout(legend = list(x = 1, y = 0))
 
 
 
 
+## 4.4. Positive samples per status over time (geom_line/point)
 
 
-## 4.3. Positive samples per status over time (geom_line/point)
+
+
+
+### Remove NaN values (0 positive / 0 sampled)
+controlos_laboratoriais_svl <- na.omit(controlos_laboratoriais_svl)
+
+### Remove infinite values (1 positive or more / 0 sampled)
+controlos_laboratoriais_svl <- controlos_laboratoriais_svl %>% 
+  filter_if(~is.numeric(.), all_vars(!is.infinite(.)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
