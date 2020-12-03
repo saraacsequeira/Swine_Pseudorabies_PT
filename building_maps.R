@@ -27,13 +27,17 @@ concelhos <- freguesias %>% select(dicofre, concelho, svl, dsavr)
 
 ## Remove the last 2 digits from dicofre
 concelhos$dicofre <- substr(concelhos$dicofre, 1, nchar(concelhos$dicofre) - 2)
+## Select one row by concelho
 concelhos <- unique(concelhos)
 
-
 # CONTINENT MAP (https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop)
+## Changing temporary directory
 temp_dir <- tempdir()
 temp <- tempfile(tmpdir = temp_dir, fileext = ".zip")
+## Set destination for map file
 download.file("http://mapas.dgterritorio.pt/ATOM-download/CAOP-Cont/Cont_AAD_CAOP2019.zip", destfile = temp)
+
+## Unzip temp and set a temporary directory to uncompress the archive to (temp_dir)
 unzip(temp, exdir = temp_dir)
 
 ## Table
@@ -66,7 +70,6 @@ cont_geo_lvs <- na.omit(cont_geo_lvs)
 
 ### View map
 ggplot(cont_geo_lvs) + geom_sf()
-
 
 ## Aggregate by FVRD
 cont_geo_fvrd <- cont_geo_concelhos %>%
