@@ -1097,7 +1097,7 @@ vaccination_data$year <- format(as.Date(vaccination_data$year, format = "%Y-%m-%
 ### Merge the 2 tables
 vaccination_status <- merge(vaccination_data, status_last, by.x = c("exploracao_id", "year"), by.y = c("exploracao_id", "year"), all.x = TRUE, all.y = FALSE)
 
-vaccination_status <- vaccination_status %>% 
+vaccination_production_status <- vaccination_status %>% 
   select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
 
 ### Group by status, year and production classes
