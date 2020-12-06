@@ -982,9 +982,9 @@ positive_lvs_map <- merge(controlos_laboratoriais_map, pt_lvs_map, by = "svl", a
 ### Add column with label
 positive_lvs_map$info <- paste0(positive_lvs_map$svl, "<br>", positive_lvs_map$positive, " animals tested positive;")
 
-### Define categories based on total animals
-positive_lvs_map$categoria <- cut(positive_lvs_map$positive, c(0,5,10,15,20,50,100))
-levels(positive_lvs_map$categoria) <- c("0;5", "5;10", "10;15", "15;20", "20;50", "50;100")
+### Define categories based on total positive animals
+positive_lvs_map$category <- cut(positive_lvs_map$positive, c(0,5,10,15,20,50,100))
+levels(positive_lvs_map$category) <- c("0;5", "5;10", "10;15", "15;20", "20;50", "50;100")
 
 ### Convert to sf
 positive_lvs_map <- st_as_sf(positive_lvs_map)
@@ -993,7 +993,7 @@ positive_lvs_map <- st_as_sf(positive_lvs_map)
 mapdeck(token = token, style = mapdeck_style("dark")) %>%
   add_polygon(data = positive_lvs_map,
               layer_id = "polygon_layer", 
-              fill_colour = "categoria",
+              fill_colour = "category",
               legend = TRUE,
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of positive animals by Local Veterinary Service")),
@@ -1021,10 +1021,11 @@ svl_percentage_graph <- ggplot(controlos_laboratoriais_svl, aes(x = LVS, y = per
   geom_bar(stat = "identity", aes(text = paste0(LVS, "<br>", percent_positive, " % positive"))) + 
   coord_flip() + 
   theme_ipsum() +
-  theme(legend.position = "none") +
   labs( title = "Percentage of vaccinated animals between sampled animals by LVS", size = 15,
         y = "Percentage",
         x = "Local Veterinary Service") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size = 5, angle = 80, hjust = 1)) +
   scale_y_continuous(limits = c(0,1))
 
 ### Interactive Graph
@@ -1033,25 +1034,19 @@ ggplotly(svl_percentage_graph, tooltip = "text") %>%
 
 
 
-
 ## 4.4. Positive samples per status over time (geom_line/point)
 
+## Only the status between 2019-09-02 until now
+status_last <- status %>%
+  group_by(exploracao_id, year) %>%
+  slice(which.max(as.Date(data, "%Y-%m-%d"))) %>%
+  filter(status$data >= "2019-09-02")
 
 
+positives_status <- merge(controlos_laboratoriais, status_last, by.x = c("exploracoes_marca"), by.y = c("exploracao_id"), all.x = TRUE, all.y = FALSE)
 
-
-### Remove NaN values (0 positive / 0 sampled)
-controlos_laboratoriais_svl <- na.omit(controlos_laboratoriais_svl)
-
-### Remove infinite values (1 positive or more / 0 sampled)
-controlos_laboratoriais_svl <- controlos_laboratoriais_svl %>% 
-  filter_if(~is.numeric(.), all_vars(!is.infinite(.)))
-
-
-
-
-
-
+vaccination_production_status <- vaccination_status %>% 
+  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
 
 
 
@@ -1161,9 +1156,6 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
                                      collapse = "")),
          legend = list(x = 1, y = 0))
       ## tentar resolver a apresentação de texto do eixo x e interactividade
-
-
-
 
 
 ## Percentage of vaccinated animals by status and production class in 2019
