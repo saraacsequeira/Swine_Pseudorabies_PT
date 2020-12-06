@@ -118,7 +118,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of animals by Local Veterinary Service")),
               palette = "bupu", 
-              auto_highlight = TRUE)
+              auto_highlight = TRUE,
+              highlight_colour = "#FAA2B6FF")
 
 
 # 1.2 - Pig farm's distribution by FVRD (food and veterinary regional directorate)
@@ -225,7 +226,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
                   tooltip = "info",
                   layer_id = "scatter_layer",
                   legend_options = list(fill_colour = list(title = "Number of animals by farm")),
-                  palette = "bupu")
+                  palette = "bupu",
+                  highlight_colour = "#FAA2B6FF")
 
 
 # 1.3.1 - Percentage of animals by class by LVS
@@ -873,7 +875,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of animals slaughtered by Local Veterinary Service")),
               palette = "bupu", 
-              auto_highlight = TRUE)
+              auto_highlight = TRUE,
+              highlight_colour = "#FAA2B6FF")
 
 
 # 3.6 Mean of daily slaughters in each month between 2016 and 2020
@@ -995,7 +998,8 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of positive animals by Local Veterinary Service")),
               palette = "bupu", 
-              auto_highlight = TRUE)
+              auto_highlight = TRUE,
+              highlight_colour = "#FAA2B6FF")
 
 
 ## 4.3. Evaluate % of positive animals among total sampled animals by SVL / laboratory
@@ -1099,7 +1103,7 @@ vaccination_data$year <- format(as.Date(vaccination_data$year, format = "%Y-%m-%
 ### Merge the 2 tables
 vaccination_status <- merge(vaccination_data, status_last, by.x = c("exploracao_id", "year"), by.y = c("exploracao_id", "year"), all.x = TRUE, all.y = FALSE)
 
-vaccination_status <- vaccination_status %>% 
+vaccination_production_status <- vaccination_status %>% 
   select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
 
 ### Group by status, year and production classes
