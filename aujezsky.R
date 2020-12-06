@@ -983,21 +983,23 @@ positive_lvs_map <- merge(controlos_laboratoriais_map, pt_lvs_map, by = "svl", a
 positive_lvs_map$info <- paste0(positive_lvs_map$svl, "<br>", positive_lvs_map$positive, " animals tested positive;")
 
 ### Define categories based on total positive animals
-positive_lvs_map$category <- cut(positive_lvs_map$positive, c(0,5,10,15,20,50,100))
-levels(positive_lvs_map$category) <- c("0;5", "5;10", "10;15", "15;20", "20;50", "50;100")
+positive_lvs_map$category <- cut(positive_lvs_map$positive, c(0, 2, 4, 6, 8, 10, 15, 20, 25, Inf))
+levels(positive_lvs_map$category) <- c("0;2", "2;4", "4;6", "6;8", "8;10", "10;15", "15;20", "20;25", "25+")
 
 ### Convert to sf
 positive_lvs_map <- st_as_sf(positive_lvs_map)
 
+new_token <- "pk.eyJ1Ijoic2FyYWFjc2VxdWVpcmEiLCJhIjoiY2tob21yOXJsMDhqdjJxbHRqNXRzcWtuNSJ9.rSulzuWkuijZK1xmU_BPnQ"
+
 ## Mapdeck
-mapdeck(token = token, style = mapdeck_style("dark")) %>%
+mapdeck(token = new_token, style = 'mapbox://styles/saraacsequeira/ckhtfukvs0tzy19rmrsdrsmk8') %>%
   add_polygon(data = positive_lvs_map,
               layer_id = "polygon_layer", 
               fill_colour = "category",
               legend = TRUE,
               tooltip = "info",
               legend_options = list(fill_colour = list(title = "Number of positive animals by Local Veterinary Service")),
-              palette = "bupu", 
+              palette = "gnbu", 
               auto_highlight = TRUE,
               highlight_colour = "#FAA2B6FF")
 
@@ -1039,10 +1041,10 @@ ggplotly(svl_percentage_graph, tooltip = "text") %>%
 ## Only the status between 2019-09-02 until now
 status_last <- status %>%
   group_by(exploracao_id, year) %>%
-  slice(which.max(as.Date(data, "%Y-%m-%d"))) %>%
-  filter(status$data >= "2019-09-02")
+  slice(which.max(as.Date(data, "%Y-%m-%d")))
 
 
+## Merge to tables in 1 (laboratory controls with status)
 positives_status <- merge(controlos_laboratoriais, status_last, by.x = c("exploracoes_marca"), by.y = c("exploracao_id"), all.x = TRUE, all.y = FALSE)
 
 vaccination_production_status <- vaccination_status %>% 
