@@ -939,12 +939,14 @@ controlos_laboratoriais$resultados_positivos <- as.numeric(controlos_laboratoria
 controlos_laboratoriais$animais_amostrados <- as.numeric(controlos_laboratoriais$animais_amostrados)
 
 controlos_laboratoriais_graph <- controlos_laboratoriais %>%
-  select(data_rececao_laboratorio, animais_amostrados, classe)
+  select(data_rececao_laboratorio, animais_amostrados, classe) %>%
+  group_by(classe, data_rececao_laboratorio) %>%
+  summarise(amostrados = sum(animais_amostrados))
 
 ## Geom_area with the number of sampled animals over time (since they started sampling)
-samples_graph <- ggplot(controlos_laboratoriais_graph, aes(x=data_rececao_laboratorio, y=animais_amostrados, fill=classe)) + 
-  geom_area(alpha=.5, size=.9, aes(text = paste('Date: ', data_rececao_laboratorio,
-                                                '<br>Nº Sampled Animals: ', animais_amostrados,
+samples_graph <- ggplot(controlos_laboratoriais_graph, aes(x=data_rececao_laboratorio, y= amostrados, group = classe, fill = classe)) + 
+  geom_area(position = 'stack', alpha=.5, size=.9, aes(fill = classe, text = paste('Date: ', data_rececao_laboratorio,
+                                                '<br>Nº Sampled Animals: ', amostrados,
                                                 '<br>Production Class: ', classe))) + 
   scale_fill_brewer(palette = "Dark2") +
   theme_ipsum() + 
@@ -1178,7 +1180,7 @@ vaccination_2019_status <- as.data.frame(aggregate(vaccination_2019$vacinados_cl
 names(status_last_production) <- c("exploracao_id", "year", "production", "status")
 
 
-
+  
 #### Select only 2020 count and status counts
 count_19 <- count %>%
   filter(data > "2018-12-31" & data < "2020-01-01")
