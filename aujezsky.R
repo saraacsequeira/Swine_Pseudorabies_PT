@@ -947,9 +947,9 @@ controlos_laboratoriais_graph <- controlos_laboratoriais %>%
   summarise(amostrados = sum(animais_amostrados))
 
 ## Geom_area with the number of sampled animals over time (since they started sampling)
-samples_graph <- ggplot(controlos_laboratoriais_graph, aes(x=data_rececao_laboratorio, y= animais_amostrados, group = classe, fill = classe)) + 
+samples_graph <- ggplot(controlos_laboratoriais_graph, aes(x=data_rececao_laboratorio, y= amostrados, group = classe, fill = classe)) + 
   geom_area(position = 'stack', alpha=.5, size=.9, aes(fill = classe, text = paste('Date: ', data_rececao_laboratorio,
-                                                '<br>Nº Sampled Animals: ', animais_amostrados,
+                                                '<br>Nº Sampled Animals: ', amostrados,
                                                 '<br>Production Class: ', classe))) + 
   scale_fill_brewer(palette = "Dark2") +
   theme_ipsum() + 
