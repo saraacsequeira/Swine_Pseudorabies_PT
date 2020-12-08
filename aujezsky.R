@@ -1133,7 +1133,6 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
   layout(legend = list(x = 1, y = 0))
 
 
-
 ## Percentage of vaccinated animals by production class in 2019
 ### Select only 2019 data of vaccinated animals
 vaccination_2019 <- vaccination_data_year %>% 
@@ -1143,29 +1142,14 @@ vaccination_2019 <- vaccination_data_year %>%
 ### Counts in 2019
 #### Select only 2019 count
 count_19 <- count %>%
-  filter(data > "2018-12-31" & data < "2020-01-01")
+  filter(data > "2018-12-31" & data < "2020-01-01") %>%
+  mutate(year = format(as.Date(data, format = "%Y-%m-%d"), "%Y")) %>%
+  select(year, exploracao, contagem)
 
-#### Number of animals by production class and status in 2020
-count_status <- merge(x = count_19, y = status_19, by.x = "exploracao", by.y = "exploracao_id", all.x = TRUE, all.y = TRUE)
+count_19 <- as.data.frame(aggregate(count_19$contagem, by = list(count_19$year), FUN=sum))
 
-#### Remove NA values, SC and A0
-count_status <- na.omit(count_status)
-count_status <- as.data.frame(count_status[!count_status$classificacao_sanitaria == "A0" & !count_status$classificacao_sanitaria == "SC",])
+### Percentage of vaccinated animals / total count animals in 2019
 
-#### Change to date format to arrange by data and farm id's --- ARRANGE NÃO RESULTA
-count_status$data.y <- as.Date(count_status$data.y, format = "%Y-%m-%d")
-
-count_status <- count_status %>% 
-  arrange(data.y)
-
-#### Select the last status of each farm -- NÃO ESTÁ A FUNCIONAR ESCOLHER O ÚLTIMO STATUS DE CADA EXPLORAÇÃO
-count_last_status <- aggregate(count_status$classificacao_sanitaria, by=list(count_status$exploracao, count_status$contagem), FUN=last)
-names(status_last_production) <- c("exploracao_id", "year", "production", "status")
-
-
-#### Arrange counts per status 
-count_status <- count_status %>%
-  select(data)
 
 
 ### Percentage of vaccinated animals
