@@ -1036,30 +1036,60 @@ ggplotly(svl_percentage_graph, tooltip = "text") %>%
 
 
 
-## 4.4. Positive samples per status over time (geom_line/point)
+## 4.4. Positive samples per status over time 
 
 ## Only the status between 2019-09-02 until now
 status_last <- status %>%
   group_by(exploracao_id, year) %>%
-  slice(which.max(as.Date(data, "%Y-%m-%d")))
-
+  slice(which.max(as.Date(data, "%Y-%m-%d"))) %>%
+  filter(year == "2019" | year == "2020")
 
 ## Merge to tables in 1 (laboratory controls with status)
 positives_status <- merge(controlos_laboratoriais, status_last, by.x = c("exploracoes_marca"), by.y = c("exploracao_id"), all.x = TRUE, all.y = FALSE)
 
-vaccination_production_status <- vaccination_status %>% 
-  select(classificacao_sanitaria, data.x, year, exploracao_id, classe_controlo, vacinados_classe)
+### Remove NA's
+positives_status <- na.omit(positives_status)
+
+### Selecting data of interest
+positives_status_last <- positives_status %>%
+  select(data_rececao_laboratorio, exploracoes_marca, classificacao_sanitaria, resultados_positivos, animais_amostrados)
+
+### Agregate by Date and status
+agg_status_positive <- aggregate(list(positives_status_last$resultados_positivos, positives_status_last$animais_amostrados), by = list(positives_status_last$classificacao_sanitaria, positives_status_last$data_rececao_laboratorio), sum)
+names(agg_status_positive) <- c("Status", "Date", "Positives", "Sampled")
+
+### New variable with percentage of positive animals between all sampled
+agg_status_positive <- agg_status_positive %>%
+  # % Positive animals among total sampled
+  mutate(Percent_positive = Positives / Sampled)
+
+agg_status_positive$Percent_positive <- round(agg_status_positive$Percent_positive, digits = 3)
+
+## Geom_line and _point with the positive samples per status over time 
+positives_status_graph <- ggplot(agg_status_positive, aes(x = Date , y = Percent_positive, color = Status)) + 
+  geom_point(size = 0.4) +
+  geom_line(size =0.4) +
+  theme_ipsum() +
+  theme(axis.title.x = element_text(size = 12)) +
+  scale_x_date(breaks = "months", date_labels = "%b")
+
+#Fazer com que gráfico seja interativo
+ggplotly(positives_status_graph,  tooltip = "text")
 
 
 
 
-
-
-
-
-
-
-
+ggplot(incidencia_melt, aes(x = Data, y = Incidencia, color = Genero)) +
+  geom_point(size = 0.4) +
+  geom_line(size = 0.4) +
+  facet_grid(incidencia_melt$Genero) +
+  theme(legend.position = "none") +
+  labs(x = "", 
+       y ="Taxa de Incidência (%)") +
+  theme(axis.title.y = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        strip.text.y = element_text(size = 8, angle = 0)) +
+  scale_x_date(breaks = "months", date_labels = "%b")
 
 
 
