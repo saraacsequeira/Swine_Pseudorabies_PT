@@ -1066,37 +1066,19 @@ agg_status_positive <- agg_status_positive %>%
 agg_status_positive$Percent_positive <- round(agg_status_positive$Percent_positive, digits = 3)
 
 ## Geom_line and _point with the positive samples per status over time 
-positives_status_graph <- ggplot(agg_status_positive, aes(x = Date , y = Percent_positive, color = Status)) + 
-  geom_point(size = 0.4) +
-  geom_line(size =0.4) +
+positives_status_graph <- ggplot(agg_status_positive, aes(x = Date , y = Percent_positive, group = Status, color = Status)) + 
+  geom_line(size =0.4, aes(text = paste('Date: ', Date,
+                                       '<br>Percentage of positive animals: ', Percent_positive))) +
   theme_ipsum() +
-  theme(axis.title.x = element_text(size = 12)) +
-  scale_x_date(breaks = "months", date_labels = "%b")
+  labs(title = "Percentage of positive animals per status over time",
+        x = "", 
+       y ="Percentage of positive animals (%)") +
+  theme(axis.title.y = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        strip.text.y = element_text(size = 8, angle = 0))
 
 #Fazer com que gráfico seja interativo
 ggplotly(positives_status_graph,  tooltip = "text")
-
-
-
-
-ggplot(incidencia_melt, aes(x = Data, y = Incidencia, color = Genero)) +
-  geom_point(size = 0.4) +
-  geom_line(size = 0.4) +
-  facet_grid(incidencia_melt$Genero) +
-  theme(legend.position = "none") +
-  labs(x = "", 
-       y ="Taxa de Incidência (%)") +
-  theme(axis.title.y = element_text(size = 12),
-        axis.text.y = element_text(size = 8),
-        strip.text.y = element_text(size = 8, angle = 0)) +
-  scale_x_date(breaks = "months", date_labels = "%b")
-
-
-
-
-
-
-
 
 
 
