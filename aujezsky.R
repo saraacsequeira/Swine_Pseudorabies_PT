@@ -1140,32 +1140,79 @@ ggplotly(vaccination_graph, tooltip = "text") %>%
   layout(legend = list(x = 1, y = 0))
 
 
-## Percentage of vaccinated animals between 2019's animal counts by production class
+
+## Vacinnated animals by production class over the months in 2019
+
 ### Select only 2019 data of vaccinated animals until today
 vaccination_2019 <- vaccination_data_year %>% 
   filter(year > "2018-12-31" & year < "2020-01-01")
 
 names(vaccination_2019) <- c("data", "production", "vaccinated")
 
+vaccination_2019$vaccinated <- as.numeric(vaccination_2019$vaccinated)
+vaccination_2019$data <- as.Date(vaccination_2019$data)
+
+## Geomline
+n_vaccinated_2019_graph <- ggplot(vaccination_2019, aes(x = data, y = vaccinated, group = production, color = production)) +
+  geom_point(size = 0.5, aes(text = paste0(data, " - ", vaccinated , "vaccinated animals"))) + 
+  theme_ipsum() + 
+  theme(legend.title = element_blank(),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10, hjust = 1),
+        axis.text.x = element_text(size = 10, hjust = 1),
+        axis.text.y = element_text(size=9)) +
+  labs( title = "Number of vaccinated animals by production class over 2019", size = 20,
+        y = "Vaccinated animals",
+        x = "Data") +
+  scale_color_manual(values=c("#006633", "#99CC99", "#666666"))
+
+## Interactive graph
+ggplotly(n_vaccinated_2019_graph, tooltip = "text")
+
+
+
+#---- TENTATIVA (falhada, data desaparece)
+### Vaccination with a 7 day roll-mean
+vac_media_rolante <- as.data.frame(cbind(vaccination_2019[7:nrow(vaccination_2019),1], rollmean(vaccination_2019[,3], k = 7)))
+names(vac_media_rolante) = c("Data", "Positives")
+
+##Fazer o gráfico
+vac_media_rolante_graph <- ggplot(vac_media_rolante, aes(x = Data, y = Positives)) +
+  geom_point(size = 0.1, color = "cadetblue", aes(text = paste('Data: ', Data,
+                                                               '<br>Número de testes: ', Positives))) +
+  geom_line(size = 0.5, color = "cadetblue") +
+  labs(title = "Média Rolante (7 dias)",
+       x = "",
+       y = "Número de Animais Positivos")
+
+##Fazer com que gráfico seja interativo
+ggplotly(vac_media_rolante_graph,  tooltip = "text")
+#-------------
+
+
+## Percentage of vaccinated animals between 2019's animal counts by production class
 ### Counts in 2019
 #### Select only 2019 count
-count_19 <- count %>%
-  filter(data > "2018-12-31" & data < "2020-01-01") %>%
-  mutate(year = format(data, format = "%Y")) %>%
-  select(year, exploracao, contagem)
+count_19 <- contagens %>%
+  filter(data > "2018-12-31" & data < "2020-01-01")
 
-count_19 <- as.data.frame(aggregate(count_19$contagem, by = list(count_19$year), FUN=sum))
+### Add column with year
+count_19$year <- format(as.Date(count_19$data, format="%d/%m/%Y"),"%Y")
+count_19 <- as.data.frame(aggregate(count_19$contagem, by = list(count_19$year), FUN = sum))
 
+
+#----------- HELP PERCENTAGES ARE WRONG AT THE END
 ### Create new column with percentage ( ratio of vaccinated animals between all the counts of the year)
 vaccination_2019 <- vaccination_2019 %>%
   mutate(percentage = vaccinated / count_19$x * 100)
 
 vaccination_2019$percentage <- round(vaccination_2019$percentage, digits = 3)
-
-############## HELP PERCENTAGES ARE WRONG
-
+#----------------
 
 
+
+
+### TO BE CONTINUED...
 
 ## Graph with the percentage of vaccinated animals / total count animals in 2019
 
@@ -1182,57 +1229,6 @@ vaccination_2019_graph <- ggplot(vaccination_2019, aes(x = year , y = Percent_po
 
 #Fazer com que gráfico seja interativo
 ggplotly(vaccination_2019_graph,  tooltip = "text")
-
-
-
-
-
-
-
-
-vaccination_2020_graph <- ggplot(vaccination_2019, aes(x = status, y = percentage * 100, fill = production)) +
-  geom_col(position = "dodge", size = 10, width = 1, aes(text = paste('Status: ', status,
-                                                '<br>Production class: ', production,
-                                                '<br>Vaccinated Animals: ', count,
-                                                '<br>Percentage (%): ', percentage *100))) +
-  scale_y_continuous(limits=c(0,1)) +
-  theme_classic() +
-  theme(legend.title = element_blank(),
-        axis.title.x = element_text( size = 12),
-        axis.text.x = element_text(size=8, 
-                                   color = "black"),
-        axis.text.y = element_text(size=10,
-                                   color = "black")) +
-  guides(fill=guide_legend(title="Género")) +
-  scale_fill_brewer(palette = "Accent")
-  
-  
-#Fazer gráfico interativo
-ggplotly(vaccination_2020_graph, tooltip = "text") %>% 
-         legend = list(x = 1, y = 0)
-
-
-
-
-
-
-
-## Vacinnated animals by production class over the months (2019)
-vaccination_production_status$data.x <- as.Date(vaccination_production_status$data.x)
-vaccination_production_status <- na.omit(vaccination_production_status)
-
-
-## Geomline 
-n_vaccinated_2019_graph <- ggplot(vaccination_2019, aes(x = data, y = vaccinated, color = production, group = production)) +
-  geom_line(size = 0.5, aes(text = paste0(data, " - ", vaccinated, " animals vaccinated"))) + 
-  theme_ipsum() + 
-  ggtitle("Animals vaccinated over the year's") + 
-  labs(y = "Number of animals vaccinated",
-       x = " ", 
-       color = " ")
-
-## Interactive graph
-ggplotly(n_vaccinated_2019_graph, tooltip = "text")
 
 
 
