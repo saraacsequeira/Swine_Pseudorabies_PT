@@ -188,7 +188,7 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
 ## Table with total animals
 contagens$contagem <- as.numeric(contagens$contagem)
 count <- as.data.frame(aggregate(contagens$contagem, by = list(contagens$declaracao_existencias), FUN = sum))
-count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1", all = TRUE))
+count <- as.data.frame(merge(contagens, count, by.x = "declaracao_existencias", by.y = "Group.1", all.x = FALSE, all.y = TRUE))
 names(count)[11] <- "total"
 count$total <- as.numeric(count$total)
 
@@ -1093,7 +1093,7 @@ vaccination_data <- vacinacoes %>%
 colnames(vaccination_data)[2] <- "exploracao_id"
 
 ### Only with results between 2016 and 2020
-vaccination_data <- vaccination_data %>% filter(vaccination_data$data > "2016-01-01" & vaccination_data$data < "2020-12-31")
+vaccination_data <- vaccination_data %>% filter(vaccination_data$data >= "2016-01-01" & vaccination_data$data <= "2020-12-31")
 
 ### Remove NA values
 vaccination_data <- na.omit(vaccination_data)
@@ -1103,7 +1103,7 @@ vaccination_data <- na.omit(vaccination_data)
 vaccination_data_year <- as.data.frame(aggregate(vaccination_data$vacinados_classe, by = list(vaccination_data$data, vaccination_data$classe_controlo), FUN = sum))
 names(vaccination_data_year) <- c("year", "production", "count")
 
-### Chane to english
+### Change to english
 vaccination_data_year$production <- replace(vaccination_data_year$production, vaccination_data_year$production == "Engorda", "Fattening")
 vaccination_data_year$production <- replace(vaccination_data_year$production, vaccination_data_year$production == "Reprodutores", "Breeding")
 vaccination_data_year$production <- replace(vaccination_data_year$production, vaccination_data_year$production == "Substituição", "Replacement")
