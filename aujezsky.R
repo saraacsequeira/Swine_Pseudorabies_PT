@@ -22,8 +22,7 @@ library(scales)
 library(rgdal)
 library(hrbrthemes)
 library(sf)
-
-
+library(zoo)
 
 # Connection with MySQL database
 connection <- dbConnect(RMariaDB :: MariaDB(),
@@ -1169,8 +1168,6 @@ n_vaccinated_2019_graph <- ggplot(vaccination_2019, aes(x = data, y = vaccinated
 ## Interactive graph
 ggplotly(n_vaccinated_2019_graph, tooltip = "text")
 
-
-
 #---- TENTATIVA (falhada, data desaparece)
 ### Vaccination with a 7 day roll-mean
 vac_media_rolante <- as.data.frame(cbind(vaccination_2019[7:nrow(vaccination_2019),1], rollmean(vaccination_2019[,3], k = 7)))
@@ -1180,7 +1177,6 @@ names(vac_media_rolante) = c("Data", "Positives")
 vac_media_rolante_graph <- ggplot(vac_media_rolante, aes(x = Data, y = Positives)) +
   geom_point(size = 0.1, color = "cadetblue", aes(text = paste('Data: ', Data,
                                                                '<br>Número de testes: ', Positives))) +
-  geom_line(size = 0.5, color = "cadetblue") +
   labs(title = "Média Rolante (7 dias)",
        x = "",
        y = "Número de Animais Positivos")
@@ -1189,56 +1185,54 @@ vac_media_rolante_graph <- ggplot(vac_media_rolante, aes(x = Data, y = Positives
 ggplotly(vac_media_rolante_graph,  tooltip = "text")
 #-------------
 
-
-## Percentage of vaccinated animals between 2019's animal counts by production class
-### Counts in 2019
-#### Select only 2019 count
-count_19 <- contagens %>%
-  filter(data > "2018-12-31" & data < "2020-01-01")
-
-### Add column with year
-count_19$year <- format(as.Date(count_19$data, format="%d/%m/%Y"),"%Y")
-count_19 <- as.data.frame(aggregate(count_19$contagem, by = list(count_19$year), FUN = sum))
-
-
-#----------- HELP PERCENTAGES ARE WRONG AT THE END
-### Create new column with percentage ( ratio of vaccinated animals between all the counts of the year)
-vaccination_2019 <- vaccination_2019 %>%
-  mutate(percentage = vaccinated / count_19$x * 100)
-
-vaccination_2019$percentage <- round(vaccination_2019$percentage, digits = 3)
-#----------------
-
-
-
-
-### TO BE CONTINUED...
-
-## Graph with the percentage of vaccinated animals / total count animals in 2019
-
-vaccination_2019_graph <- ggplot(vaccination_2019, aes(x = year , y = Percent_positive, group = Status, color = Status)) + 
-  geom_line(size =0.4, aes(text = paste('Date: ', Date,
-                                        '<br>Percentage of positive animals: ', percentage))) +
-  theme_ipsum() +
-  labs(title = "Percentage of positive animals per status over time",
-       x = "", 
-       y ="Percentage of positive animals (%)") +
-  theme(axis.title.y = element_text(size = 12),
-        axis.text.y = element_text(size = 8),
-        strip.text.y = element_text(size = 8, angle = 0))
-
-#Fazer com que gráfico seja interativo
-ggplotly(vaccination_2019_graph,  tooltip = "text")
-
-
-
-
-
-
 ## Vaccinated animals by LVS (mapa)
 
+## 5. Map number of vaccinated animals in different LVS 
+### 5.1. Join different LVS in vaccination data
+exploracoes_svl <- exploracoes %>%
+  select(exploracao, longitude, latitude, svl, dsavr)
 
-## See if vaccination intervals are accourdingly to the plan for each status/ production class (pie chart?)
+vaccinated_svl <- merge(exploracoes_svl, vaccination_data, by.x = "exploracao", by.y = "exploracao_id")
+
+### Select data to map vaccinated animals by LVS
+vac_svl <- vaccinated_svl %>%
+  select(data, exploracao, svl, classe_controlo, vacinados_classe)
+
+vac_svl <- as.data.frame(aggregate(vac_svl$vacinados_classe , 
+                                                       by = list(vac_svl$svl), FUN = sum))
+names(vac_svl) <- c("svl", "vaccinated")
+vac_svl$vaccinated <- as.numeric(vac_svl$vaccinated)
+
+### Merge made map with vaccinated animals by LVS
+vac_lvs_map <- merge(vac_svl, pt_lvs_map, by.x = "svl", all = TRUE)
+
+### Add column with label
+vac_lvs_map$info <- paste0(vac_lvs_map$svl, "<br>", vac_lvs_map$vaccinated, " vaccinated animals;")
+
+### Define categories based on total vaccinated animals
+vac_lvs_map$category5 <- cut(vac_lvs_map$vaccinated, c(0, 1000, 5000, 10000, 20000, 40000, 80000, 160000, 320000, 640000, 1280000, 2560000, Inf))
+levels(vac_lvs_map$category) <- c("0;1000", "1000;5000", "5000;10000", "10000;20000", "20000;40000", "40000;80000", "80000;160000", "160000;320000", "320000;640000", "640000;1280000", "1280000,2560000", "2560000+")
+
+### Convert to sf
+vac_lvs_map <- st_as_sf(vac_lvs_map)
+
+## MAP 
+new_token <- "pk.eyJ1Ijoic2FyYWFjc2VxdWVpcmEiLCJhIjoiY2tob21yOXJsMDhqdjJxbHRqNXRzcWtuNSJ9.rSulzuWkuijZK1xmU_BPnQ"
+
+## Mapdeck
+mapdeck(token = new_token, style = 'mapbox://styles/saraacsequeira/ckhtfukvs0tzy19rmrsdrsmk8') %>%
+  add_polygon(data = vac_lvs_map,
+              layer_id = "polygon_layer", 
+              fill_colour = "category5",
+              legend = TRUE,
+              tooltip = "info",
+              legend_options = list(fill_colour = list(title = "Number of vaccinated animals by Local Veterinary Service")),
+              palette = "gnbu", 
+              auto_highlight = TRUE,
+              highlight_colour = "#FAA2B6FF")
+
+
+## See if vaccination intervals are accourdingly to the plan for each status/ production class 
 ###Verificação de cumprimento de prazos. 
 
 
@@ -1278,11 +1272,9 @@ mapdeck(token = token, style = mapdeck_style("dark")) %>%
               auto_highlight = TRUE)
 
 
-
-
 ##NEXT POSSIBLE QUESTIONS : Geom_point with vaccinated animals vs slaughtered animals , or other any other possible correlations?
 
-
+## Correlation between vaccinated animals and slaughtered ones
 
 
 
