@@ -6,19 +6,16 @@ To evaluate if this measures are being effectively implemented in Portugal and t
 
 **Data Source**
 <ul>
-  <li>Metodologia da análise dos dados:       </li>
-  <li>Base de dados:    </li>
-  <li>Explicação da base de dados:     </li>
+  <li>SISS - New Swine Health Information System</li>
+  <li>MySQL</li>
 </ul>
 
 
 <center> 
  **Um trabalho de**
 
-Sara Sequeira [`r icon::fa("linkedin")`](https://www.linkedin.com/in/sara-sequeira-1b5085152/) | Teresa da Penha Coutinho [`r icon::fa("linkedin")`](https://www.linkedin.com/in/teresa-da-penha-coutinho/)
+Sara Sequeira [📩](https://www.linkedin.com/in/sara-sequeira-1b5085152/) | Teresa da Penha Coutinho [📩](https://www.linkedin.com/in/teresa-da-penha-coutinho/)
 
 sarasequeira5@hotmail.com; teresa.jesus.coutinho@gmail.com; ines.marcal.antunes@gmail.com; 
-
-[`r icon::fa("github")`](https://github.com/EpiVet2020/Rt_COVID19.git)
 
 </center>
