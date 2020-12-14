@@ -14,8 +14,7 @@ To evaluate if this measures are being effectively implemented in Portugal and t
 <center> 
 Um trabalho de
 
-Sara Sequeira [📩](https://www.linkedin.com/in/sara-sequeira-1b5085152/) | Teresa da Penha Coutinho [📩](https://www.linkedin.com/in/teresa-da-penha-coutinho/)
-
-sarasequeira5@hotmail.com; teresa.jesus.coutinho@gmail.com;
+Sara Sequeira [📩](https://www.linkedin.com/in/sara-sequeira-1b5085152/) |  sarasequeira5@hotmail.com; 
+Teresa da Penha Coutinho [📩](https://www.linkedin.com/in/teresa-da-penha-coutinho/) |  teresa.jesus.coutinho@gmail.com;
 
 </center>
